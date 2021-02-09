@@ -1,9 +1,10 @@
-import random
-import random
+import glob, os
+import sys
 
 import psycopg2
 from psycopg2 import Error as PGError
 
+from configuration import EXECUTION_CONFIGS
 from configuration.constants import SLUSHPOOL_NAME, DEFAULT_NUMBER_OF_PAST_BLOCKS_TO_FETCH
 from utility.log import logger
 
@@ -13,6 +14,9 @@ class DatabaseException(Exception):
 
 
 class Database:
+    KV_OWNER_KEY = 'db'
+    LOADED_DATA_FILES_LIST_KEY = 'loaded_data_files_list'
+
     def __init__(self, user, password, database, host="127.0.0.1", port="5432"):
         """
         A singleton class that is the interface of our data bank database
@@ -22,6 +26,8 @@ class Database:
         self.user = user
         self.password = password
         self.database = database
+        self.data_files_loaded = []
+        self.init_loaded_data_files_info()
 
     def update_data(self, up_to_timestamp):
         """
@@ -31,6 +37,9 @@ class Database:
         # NOTE: this method should execute asynchronically
 
         # TODO 1. Check the data directory for any new data files to load into the database
+        new_csv_files = self.check_new_data_files_to_load()
+        if len(new_csv_files) != 0:
+            self.load_new_csv_files(new_csv_files)
 
         # TODO 2. Check the APIs to see if there is any new data to fetch and insert into the database
 
@@ -119,7 +128,7 @@ class Database:
         except (Exception, PGError) as e:
             logger('database').error("Write query failed {0}.".format(write_sql_query))
             logger('database').error("Exception {0}.".format(e))
-            raise DatabaseException('SELECT QUERY /// {0} /// FAILED.'.format(write_sql_query))
+            raise DatabaseException('WRITE QUERY /// {0} /// FAILED.'.format(write_sql_query))
         finally:
             if conn is not None:
                 cursor.close()
@@ -156,3 +165,55 @@ class Database:
                                 host=self.host,
                                 port=self.port,
                                 database=self.database)
+
+    def init_loaded_data_files_info(self):
+        stored_value = self.key_value_get(self.KV_OWNER_KEY, self.LOADED_DATA_FILES_LIST_KEY)
+        if stored_value is None or stored_value == "":
+            self.key_value_put(self.KV_OWNER_KEY, self.LOADED_DATA_FILES_LIST_KEY, "")
+            self.data_files_loaded = []
+        else:
+            self.data_files_loaded = stored_value.split(',')
+
+    def remember_csv_file_was_loaded(self, file_name):
+        self.data_files_loaded.append(file_name)
+        self.key_value_put(self.KV_OWNER_KEY, self.LOADED_DATA_FILES_LIST_KEY, ",".join(self.data_files_loaded))
+
+    def check_new_data_files_to_load(self):
+        new_files_to_load = []
+
+        os.chdir(EXECUTION_CONFIGS.project_root_directory)
+        os.chdir(EXECUTION_CONFIGS.db_csv_data_dir)
+        for file_name in glob.glob("*.*.csv"):
+            if file_name not in self.data_files_loaded:
+                new_files_to_load.append(file_name)
+        return new_files_to_load
+
+    def load_new_csv_files(self, new_files_to_load):
+        for file_name in new_files_to_load:
+            success = self.load_csv_file(file_name)
+            if success:
+                self.remember_csv_file_was_loaded(file_name)
+                logger('database').info("CSV file {0} was loading into the database successfully.".format(file_name))
+
+    def load_csv_file(self, file_name):
+        table_name = file_name[:file_name.find('.')]
+        file_full_path = os.path.join(EXECUTION_CONFIGS.project_root_directory,
+                                      EXECUTION_CONFIGS.db_csv_data_dir,
+                                      file_name)
+        conn = None
+        try:
+            conn = self.create_connection()
+            cursor = conn.cursor()
+            with open(file_full_path, 'r') as csv_file:
+                cursor.copy_from(csv_file, table_name, sep=EXECUTION_CONFIGS.db_csv_separator)
+            conn.commit()
+            return True
+        except (Exception, PGError) as e:
+            logger('database').error("Loading CSV file failed {0}.".format(file_full_path))
+            logger('database').error("Exception {0}.".format(e))
+            return False
+        finally:
+            if conn is not None:
+                cursor.close()
+                conn.close()
+

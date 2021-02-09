@@ -1,3 +1,6 @@
+import os
+import sys
+
 import yaml
 import logging
 from enum import Enum
@@ -24,6 +27,7 @@ RUNTIME_MODE = RuntimeMode.SIMULATION if config_raw_data['runtime_mode'] == "sim
 class RealtimeConfigs:
     def __init__(self, entries):
         self.read_entries(entries)
+        self.project_root_directory = os.path.dirname(sys.modules['__main__'].__file__)
 
     def read_entries(self, entries):
         for k, v in entries.items():

@@ -9,6 +9,8 @@ realtime:
   db_user: "|||smart_miner"
   db_password: "|||smartminerpa$$w0rd1368"
   db_database_name: "|||smart_miner"
+  db_csv_data_dir: "|||./files/csv_data/"
+  db_csv_separator: "|||,"
 simulation:
   tick_execution_interval_seconds: "0.5"
   execution_start_timestamp: "datetime_string_to_timestamp(\"11/22/2019-23:16:24\")"
