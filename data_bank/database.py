@@ -19,7 +19,7 @@ class Database:
 
     def __init__(self, user, password, database, host="127.0.0.1", port="5432"):
         """
-        A singleton class that is the interface of our data bank database
+        A singleton class that is the interface of databases
         """
         self.host = host
         self.port = port
@@ -28,6 +28,9 @@ class Database:
         self.database = database
         self.data_files_loaded = []
         self.init_loaded_data_files_info()
+
+    def get_db_csv_name_suffix(self):
+        raise DatabaseException("The base database class should not be used.")
 
     def update_data(self, up_to_timestamp):
         """
@@ -45,35 +48,6 @@ class Database:
 
         # TODO 3: log some status of the database
         logger('database').info("Updating data up to timestamp {0}.".format(up_to_timestamp))
-
-    def get_latest_block_id(self):
-        """
-        Returns the id of the latest block in the database
-        :return: id
-        """
-        pass
-
-    def get_blocks_between(self, begin_timestamp, end_timestamp, pool_name=SLUSHPOOL_NAME):
-        """
-        Returns a list of blocks in the given pool in the database whose moment is between the given timestamps
-        :param pool_name:
-        :param begin_timestamp:
-        :param end_timestamp:
-        :return: A list of tuples of the form (id, moment) where id is the block id and moment is its timestamp
-        """
-        pass
-
-    def get_blocks_prior_or_equal_to(self, prior_to_timestamp, count=DEFAULT_NUMBER_OF_PAST_BLOCKS_TO_FETCH,
-                                     pool_name=SLUSHPOOL_NAME):
-        """
-        Returns a list of up to 'count' blocks in the given pool in the database whose moment is prior or equal to
-        'prior_to_timestamp'
-        :param count:
-        :param prior_to_timestamp:
-        :param pool_name:
-        :return: A list of tuples of the form (id, moment) where id is the block id and moment is its timestamp
-        """
-        pass
 
     def key_value_get(self, owner, key):
         """
@@ -183,7 +157,7 @@ class Database:
 
         os.chdir(EXECUTION_CONFIGS.project_root_directory)
         os.chdir(EXECUTION_CONFIGS.db_csv_data_dir)
-        for file_name in glob.glob("*.*.csv"):
+        for file_name in glob.glob("*.*.{0}.csv".format(self.get_db_csv_name_suffix())):
             if file_name not in self.data_files_loaded:
                 new_files_to_load.append(file_name)
         return new_files_to_load

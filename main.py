@@ -2,7 +2,7 @@ import sys
 import traceback
 from time import sleep
 
-from configuration import EXECUTION_CONFIGS
+from configuration import EXECUTION_CONFIGS, is_simulation_run
 from nicehash import get_nice_hash_driver
 from utility import log
 from analyzer import get_analyzer
@@ -31,10 +31,14 @@ def tick(current_timestamp):
 if __name__ == '__main__':
     try:
         timestamp_of_now = EXECUTION_CONFIGS.execution_start_timestamp
+        number_of_ticks_passed = 0
         while True:
             tick(timestamp_of_now)
             sleep(EXECUTION_CONFIGS.tick_execution_interval_seconds)
             timestamp_of_now += EXECUTION_CONFIGS.tick_duration_seconds
+            if number_of_ticks_passed % 20 == 0:
+                log.logger('main').info('Execution identifier is {0}'.format(EXECUTION_CONFIGS.execution_identifier))
+            number_of_ticks_passed += 1
     except KeyboardInterrupt:
         log.logger('main').info('Program terminating upon keyboard interrupt.')
     except Exception as e:

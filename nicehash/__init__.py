@@ -1,6 +1,6 @@
 from configuration import is_simulation_run
-from configuration.configs import RuntimeMode
-from nicehash.nicehash_driver import NiceHashRealtimeDriver, NiceHashSimulationDriver
+from nicehash.realtime_driver import NiceHashRealtimeDriver
+from nicehash.simulation_driver import NiceHashSimulationDriver
 
 NICE_HASH_DRIVER = None
 

@@ -16,31 +16,44 @@ config_raw_realtime = config_raw_data['realtime']
 config_raw_simulation = config_raw_data['simulation']
 
 
+def evaluate_value(value):
+    if value.startswith("|||"):
+        return value[3:]
+    elif value.startswith("!!"):
+        return custom_evaluation(value)
+    else:
+        return eval(value)
+
+
+def custom_evaluation(value):
+    if value.startswith("!!timestamp!"):
+        return datetime_string_to_timestamp(datetime_string=evaluate_value(value[len("!!timestamp!"):]))
+
+
 class RuntimeMode(Enum):
     SIMULATION = 1
     REALTIME = 2
 
 
-RUNTIME_MODE = RuntimeMode.SIMULATION if config_raw_data['runtime_mode'] == "simulation" else RuntimeMode.REALTIME
+RUNTIME_MODE = evaluate_value("RuntimeMode." + config_raw_data['runtime_mode'])
 
 
 class RealtimeConfigs:
     def __init__(self, entries):
         self.read_entries(entries)
         self.project_root_directory = os.path.dirname(sys.modules['__main__'].__file__)
+        self.execution_identifier = "realtime-{0}".format(int(datetime_string_to_timestamp(datetime_string=None)))
 
     def read_entries(self, entries):
         for k, v in entries.items():
-            if str(v).startswith("|||"):
-                self.__dict__[k] = v[3:]
-            else:
-                self.__dict__[k] = eval(v)
+            self.__dict__[k] = evaluate_value(v)
 
 
 class SimulationConfigs(RealtimeConfigs):
     def __init__(self, realtime_entries, simulation_entries):
         super().__init__(realtime_entries)
         self.read_entries(simulation_entries)
+        self.execution_identifier = "simulation-{0}".format(int(datetime_string_to_timestamp(datetime_string=None)))
 
 
 REALTIME_CONFIGS = RealtimeConfigs(config_raw_realtime)
