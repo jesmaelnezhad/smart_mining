@@ -1,0 +1,10 @@
+prom/node-exporter              latest    417edb353046   2 days ago      25.9MB
+grafana/grafana                 7.4.0     0f9b46969206   4 days ago      198MB
+haproxy                         alpine    a23483b64002   4 days ago      22.6MB
+postgres                        latest    4ea2949e4cb8   2 weeks ago     314MB
+prom/prometheus                 v2.24.1   19162aa1f28d   2 weeks ago     173MB
+prom/alertmanager               latest    c876f5897d7b   7 months ago    55.5MB
+prometheusnet/docker_exporter   latest    f48aa98298fc   11 months ago   57.2MB
+postgres                        12.0      f88dfa384cc4   16 months ago   348MB
+nginx:1.19.6
+python:3.6

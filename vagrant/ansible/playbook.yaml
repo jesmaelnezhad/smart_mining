@@ -1,0 +1,8 @@
+- hosts: vmnodes
+  vars_files:
+    - ./vars/config.yaml
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Install docker
+      import_tasks: ./tasks/install_docker.yaml
