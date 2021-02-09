@@ -1,5 +1,7 @@
 import datetime
 
+import pytz
+
 
 def datetime_string_to_timestamp(datetime_string, datetime_format="%m/%d/%Y-%H:%M:%S"):
     """
@@ -9,7 +11,7 @@ def datetime_string_to_timestamp(datetime_string, datetime_format="%m/%d/%Y-%H:%
     :return: the timestamp
     """
     if datetime_string is None:
-        return datetime.datetime.now().timestamp()
+        return datetime.datetime.now(tz=pytz.UTC).timestamp()
 
     date = datetime.datetime.strptime(datetime_string, datetime_format)
     return datetime.datetime.timestamp(date)

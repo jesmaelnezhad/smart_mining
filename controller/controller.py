@@ -1,3 +1,6 @@
+import random
+
+from data_bank import get_database
 from utility.log import logger
 
 

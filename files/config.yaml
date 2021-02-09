@@ -1,0 +1,15 @@
+runtime_mode: "simulation" # simulation or realtime
+realtime:
+  tick_execution_interval_seconds: "10.0 * MINUTE_SECONDS"
+  tick_duration_seconds: "10.0 * MINUTE_SECONDS"
+  execution_start_timestamp: "datetime_string_to_timestamp(datetime_string=None)"
+  log_level: "logging.INFO"
+  db_host: "|||127.0.0.1"
+  db_port: "|||5432"
+  db_user: "|||smart_miner"
+  db_password: "|||smartminerpa$$w0rd1368"
+  db_database_name: "|||smart_miner"
+simulation:
+  tick_execution_interval_seconds: "0.5"
+  execution_start_timestamp: "datetime_string_to_timestamp(\"11/22/2019-23:16:24\")"
+  log_level: "logging.DEBUG"
