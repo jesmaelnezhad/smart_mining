@@ -1,4 +1,7 @@
 configuration/__pycache__/__init__.cpython-36.pyc
 configuration/__pycache__/__init__.cpython-36.pyc
+data_bank/__pycache__/*
+nicehash/__pycache__/*
+*/__pycache__/*
 vagrant/.vagrant
 files/csv_data
