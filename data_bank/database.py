@@ -153,6 +153,7 @@ class DatabaseHandler:
     def execute_write(self, write_sql_query, return_generated_id=False):
         """
         Executes the given update/insert/delete query
+        :param persistent_connection: when passed non None, no new connection will be made and it won't be closed
         :param return_generated_id: The function returns the generated id if True is passed which means it's an insert
         :param write_sql_query: the sql query to execute
         :return: None or the generated ID
@@ -209,19 +210,23 @@ class DatabaseHandler:
                                 database=self.database)
 
     def load_csv_file(self, table_name, file_full_path):
-        conn = None
         try:
-            conn = self.create_connection()
-            cursor = conn.cursor()
             with open(file_full_path, 'r') as csv_file:
-                cursor.copy_from(csv_file, table_name, sep=EXECUTION_CONFIGS.db_csv_separator)
-            conn.commit()
+                header = csv_file.readline()
+                columns = header.split(EXECUTION_CONFIGS.db_csv_separator)
+                record_line = csv_file.readline()
+                while record_line:
+                    record_values = record_line.split(EXECUTION_CONFIGS.db_csv_separator)
+                    sql_insert_statement = """INSERT INTO {0} ({1}) VALUES ({2});""".format(table_name,
+                                                                                            ",".join(columns),
+                                                                                            ",".join(record_values))
+                    try:
+                        self.execute_write(write_sql_query=sql_insert_statement)
+                    except DatabaseException:
+                        logger('database/handler').error("Error: inserting record from csv file failed.")
+                    record_line = csv_file.readline()
             return True
         except (Exception, PGError) as e:
             logger('database/handler').error("Loading CSV file failed {0}.".format(file_full_path))
             logger('database/handler').error("Exception {0}.".format(e))
             return False
-        finally:
-            if conn is not None:
-                cursor.close()
-                conn.close()
