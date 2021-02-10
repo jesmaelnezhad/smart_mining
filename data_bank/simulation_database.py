@@ -1,17 +1,18 @@
-from data_bank.database import Database
+from clock.clock import calculate_tick_duration_from_sleep_duration
+from configuration import EXECUTION_CONFIGS
+from data_bank.database import DatabaseHandler, DatabaseUpdater
 from utility.log import logger
 
 
-class SimulationDatabase(Database):
-    def __init__(self, user, password, database, host="127.0.0.1", port="5432"):
-        """
-        A singleton class that is the interface of our simulation data database
-        """
-        super().__init__(user, password, database, host, port)
-        # TODO things specific to simulation database
+class SimulationDatabaseUpdater(DatabaseUpdater):
+    def __init__(self, handler):
+        super().__init__(handler)
 
     def get_db_csv_name_suffix(self):
         return "simulation"
+
+    def get_tick_duration(self):
+        return calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.simulation_db_updater_sleep_duration)
 
     def update_data(self, up_to_timestamp):
         """
@@ -20,5 +21,13 @@ class SimulationDatabase(Database):
         """
         super().update_data(up_to_timestamp)
         # TODO logic needed to update the simulation database
-        logger('simulation-database').info("Updating data up to timestamp {0}.".format(up_to_timestamp))
+        logger('simulation-db/updater').debug("Updating data up to timestamp {0}.".format(up_to_timestamp))
+
+
+class SimulationDatabaseHandler(DatabaseHandler):
+    def __init__(self, user, password, database="smart_miner_simulation_data", host="127.0.0.1", port="5432"):
+        """
+        A singleton class that is the interface of our simulation data database
+        """
+        super().__init__(user, password, database, host, port)
 

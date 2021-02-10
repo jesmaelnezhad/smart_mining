@@ -1,6 +1,6 @@
 import random
 
-from data_bank import get_database
+from data_bank import get_database_handler
 from utility.log import logger
 
 

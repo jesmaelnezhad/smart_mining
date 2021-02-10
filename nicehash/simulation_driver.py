@@ -11,6 +11,7 @@ class NiceHashSimulationDriver(NiceHashDriver):
         A singleton class that is the driver of nicehash
         """
         # A map from order_id to its information object
+        super().__init__()
         self.orders = dict()
 
     def perform_tick(self, up_to_timestamp):
@@ -18,7 +19,7 @@ class NiceHashSimulationDriver(NiceHashDriver):
         Performs one tick.
         :return: None
         """
-        logger('nicehash').info("Performing a tick at timestamp {0}.".format(up_to_timestamp))
+        logger('nicehash').debug("Performing a tick at timestamp {0}.".format(up_to_timestamp))
         # TODO: move on all orders and update their limits according to any previously requested limit changes
         pass
 

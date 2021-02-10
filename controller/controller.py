@@ -1,20 +1,28 @@
 import random
+from time import sleep
 
-from data_bank import get_database
+from clock import get_clock
+from clock.clock import calculate_tick_duration_from_sleep_duration
+from clock.tick_performer import TickPerformer
+from configuration import EXECUTION_CONFIGS
 from utility.log import logger
 
 
-class Controller:
+class Controller(TickPerformer):
     def __init__(self):
         """
         A singleton class that is the controller
         """
-        pass
+        super().__init__()
+        self.tick_duration = calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.controller_sleep_duration)
 
-    def perform_tick(self, up_to_timestamp):
-        """
-        Performs one tick.
-        :return: None
-        """
-        # TODO: this method should perform asynchronically
-        logger('controller').info("Performing a tick at timestamp {0}.".format(up_to_timestamp))
+    def run(self, should_stop):
+        while True:
+            if should_stop():
+                break
+            sleep(self.tick_duration)
+            current_timestamp = get_clock().read_timestamp_of_now()
+            logger('controller').debug("Updating analytics at timestamp {0}.".format(current_timestamp))
+
+    def is_a_daemon(self):
+        return False

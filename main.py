@@ -2,12 +2,13 @@ import sys
 import traceback
 from time import sleep
 
+from clock import get_clock
 from configuration import EXECUTION_CONFIGS, is_simulation_run
 from nicehash import get_nice_hash_driver
 from utility import log
 from analyzer import get_analyzer
 from controller import get_controller
-from data_bank import get_database
+from data_bank import get_database_handler, get_database_updater, get_simulation_database_updater
 
 
 def tick(current_timestamp):
@@ -16,33 +17,73 @@ def tick(current_timestamp):
     :param current_timestamp: the timestamp of when the tick is happening
     :return: None
     """
-    # logic that should repeat periodically
-    # Update any information retrieved from nicehash (or perform any logic needed in nicehash mock)
-    get_nice_hash_driver().perform_tick(up_to_timestamp=current_timestamp)
     # Update the data in the data bank
-    get_database().update_data(up_to_timestamp=current_timestamp)
-    # Update analysis results and/or learning models
-    get_analyzer().update_analytics(up_to_timestamp=current_timestamp)
+    get_database_handler().update_data(up_to_timestamp=current_timestamp)
     # Wake up the controller to perform one tick
     get_controller().perform_tick(up_to_timestamp=current_timestamp)
     log.logger('main/tick').info('Periodic logic.')
 
 
+TICK_PERFORMERS = []
+
+
+def join_tick_performers(stop=False):
+    if stop:
+        for p in TICK_PERFORMERS:
+            p.stop()
+    for p in TICK_PERFORMERS:
+        p.join()
+
+
 if __name__ == '__main__':
     try:
-        timestamp_of_now = EXECUTION_CONFIGS.execution_start_timestamp
-        number_of_ticks_passed = 0
-        while True:
-            tick(timestamp_of_now)
-            sleep(EXECUTION_CONFIGS.tick_execution_interval_seconds)
-            timestamp_of_now += EXECUTION_CONFIGS.tick_duration_seconds
-            if number_of_ticks_passed % 20 == 0:
-                log.logger('main').info('Execution identifier is {0}'.format(EXECUTION_CONFIGS.execution_identifier))
-            number_of_ticks_passed += 1
+        log.logger('main').info('Execution identifier is {0}'.format(EXECUTION_CONFIGS.execution_identifier))
+        # start the clock
+        clock = get_clock()
+        clock.start()
+        TICK_PERFORMERS.append(clock)
+        log.logger('main').info('Clock started.')
+
+        # start the mine database updater
+        mine_database_updater = get_database_updater()
+        mine_database_updater.start()
+        TICK_PERFORMERS.append(mine_database_updater)
+        log.logger('main').info('Mine database updater started.')
+
+        if is_simulation_run():
+            # start the simulation database updater
+            simulation_database_updater = get_simulation_database_updater()
+            simulation_database_updater.start()
+            TICK_PERFORMERS.append(simulation_database_updater)
+            log.logger('main').info('Simulation database updater started.')
+
+        # start the controller
+        controller = get_controller()
+        controller.start()
+        TICK_PERFORMERS.append(controller)
+        log.logger('main').info('Controller started.')
+
+        # start the analyzer
+        analyzer = get_analyzer()
+        analyzer.start()
+        TICK_PERFORMERS.append(analyzer)
+        log.logger('main').info('Analyzer started.')
+
+        # start the nice hash driver
+        nice_hash = get_nice_hash_driver()
+        nice_hash.start()
+        TICK_PERFORMERS.append(nice_hash)
+        log.logger('main').info('Nice hash driver started.')
+
+        # Just wait in the program
+        # join all tick performers
+        join_tick_performers()
     except KeyboardInterrupt:
         log.logger('main').info('Program terminating upon keyboard interrupt.')
+        join_tick_performers(stop=True)
     except Exception as e:
         log.logger('main').info("Exception {0}".format(e))
         traceback.print_exc(file=sys.stdout)
+        join_tick_performers(stop=True)
         sys.exit(1)
     sys.exit(0)

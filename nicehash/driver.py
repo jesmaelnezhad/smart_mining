@@ -1,3 +1,9 @@
+from time import sleep
+
+from clock import get_clock
+from clock.clock import calculate_tick_duration_from_sleep_duration
+from clock.tick_performer import TickPerformer
+from configuration import EXECUTION_CONFIGS
 from utility.log import logger
 
 
@@ -12,12 +18,24 @@ class NiceHashOrder:
         self.last_change_requested_limit = None
 
 
-class NiceHashDriver:
+class NiceHashDriver(TickPerformer):
     def __init__(self):
         """
         A singleton class that is the driver of nicehash
         """
-        pass
+        super().__init__()
+        self.tick_duration = calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.nice_hash_sleep_duration)
+
+    def run(self, should_stop):
+        while True:
+            if should_stop():
+                break
+            sleep(self.tick_duration)
+            current_timestamp = get_clock().read_timestamp_of_now()
+            self.perform_tick(current_timestamp)
+
+    def is_a_daemon(self):
+        return False
 
     def perform_tick(self, up_to_timestamp):
         """

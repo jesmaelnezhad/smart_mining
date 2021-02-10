@@ -4,7 +4,7 @@ import logging
 # Initialize the logging utility
 from configuration import EXECUTION_CONFIGS
 
-FORMAT = '%(asctime)s - %(name)s -  %(levelname)s - %(message)s'
+FORMAT = EXECUTION_CONFIGS.log_format
 logging.basicConfig(level=logging.DEBUG, format=FORMAT)
 
 
