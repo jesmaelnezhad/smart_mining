@@ -23,5 +23,8 @@ class Analyzer(TickPerformer):
             current_timestamp = get_clock().read_timestamp_of_now()
             logger('analyzer').debug("Updating analytics at timestamp {0}.".format(current_timestamp))
 
+    def post_run(self):
+        logger('analyzer').info("Analyzer is terminating.")
+
     def is_a_daemon(self):
         return False

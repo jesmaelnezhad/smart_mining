@@ -42,6 +42,9 @@ class DatabaseUpdater(TickPerformer):
             current_timestamp = get_clock().read_timestamp_of_now()
             self.update_data(current_timestamp)
 
+    def post_run(self):
+        logger('database').info("Database ({0}) is terminating.".format(self.get_db_csv_name_suffix()))
+
     def is_a_daemon(self):
         return False
 

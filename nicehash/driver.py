@@ -26,6 +26,9 @@ class NiceHashDriver(TickPerformer):
             self.perform_tick(current_timestamp)
         self.pre_exit_house_keeping()
 
+    def post_run(self):
+        logger('driver').info("Driver is terminating.")
+
     def is_a_daemon(self):
         return False
 

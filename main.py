@@ -26,6 +26,7 @@ def tick(current_timestamp):
 
 
 TICK_PERFORMERS = []
+CONTROLLER = None
 
 
 def join_tick_performers(stop=False):
@@ -34,6 +35,18 @@ def join_tick_performers(stop=False):
             p.stop()
     for p in TICK_PERFORMERS:
         p.join()
+
+
+def graceful_termination():
+    if CONTROLLER is None:
+        # stop all threads since controller is not running anyways
+        join_tick_performers(stop=True)
+    else:
+        # first stop the controller and wait for it to terminate gracefully
+        CONTROLLER.stop()
+        while not CONTROLLER.should_end_execution():
+            sleep(1)
+        join_tick_performers(stop=True)
 
 
 if __name__ == '__main__':
@@ -59,9 +72,9 @@ if __name__ == '__main__':
             log.logger('main').info('Simulation database updater started.')
 
         # start the controller
-        controller = get_controller()
-        controller.start()
-        TICK_PERFORMERS.append(controller)
+        CONTROLLER = get_controller()
+        CONTROLLER.start()
+        TICK_PERFORMERS.append(CONTROLLER)
         log.logger('main').info('Controller started.')
 
         # start the analyzer
@@ -82,17 +95,17 @@ if __name__ == '__main__':
             simulation_evaluator.start()
             TICK_PERFORMERS.append(simulation_evaluator)
             log.logger('main').info('Simulation evaluator started.')
-            while not simulation_evaluator.should_end_simulation():
+            while not simulation_evaluator.should_end_execution():
                 sleep(1)
-            join_tick_performers(stop=True)
+            graceful_termination()
         else:
             join_tick_performers()
     except KeyboardInterrupt:
         log.logger('main').info('Program terminating upon keyboard interrupt.')
-        join_tick_performers(stop=True)
+        graceful_termination()
     except Exception as e:
         log.logger('main').info("Exception {0}".format(e))
         traceback.print_exc(file=sys.stdout)
-        join_tick_performers(stop=True)
+        graceful_termination()
         sys.exit(1)
     sys.exit(0)
