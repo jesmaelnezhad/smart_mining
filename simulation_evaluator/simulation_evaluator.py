@@ -48,7 +48,7 @@ class SimulationEvaluator(TickPerformer):
         proven_simulation_identifiers = None
         if EXECUTION_CONFIGS.clean_simulation_database:
             proven_simulation_identifiers = self.get_proven_simulation_identifiers()
-        self.simulation_db_hander.prepare_for_simulation(
+        self.simulation_db_handler.prepare_for_simulation(
             proven_simulation_identifiers=proven_simulation_identifiers)
         # start taking samples if a new simulation is going to happen
         if not is_new_simulation_going_to_happen():

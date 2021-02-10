@@ -78,7 +78,7 @@ class SimulationDatabaseHandler(DatabaseHandler):
         moment timestamptz NOT NULL, 
         power_limit DOUBLE PRECISION DEFAULT 0.0, 
         price DOUBLE PRECISION DEFAULT 0.0, 
-        CONSTRAINT order_status UNIQUE(order_id, moment));""".format(self.current_simulation_table_name)
+        CONSTRAINT {0}_order_status UNIQUE(order_id, moment));""".format(self.current_simulation_table_name)
         self.execute_write(write_sql_query=sql_statement)
         logger('simulation/db/handler').info(
             "Created table {0} for the simulation that is starting.".format(self.current_simulation_table_name))
