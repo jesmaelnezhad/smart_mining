@@ -1,7 +1,8 @@
 import os
 import glob
+from threading import Lock
 from time import sleep
-
+from pathlib import Path
 from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
@@ -23,6 +24,24 @@ class SimulationEvaluator(TickPerformer):
             EXECUTION_CONFIGS.simulation_evaluator_sleep_duration)
         self.simulation_db_handler = get_simulation_database_handler()
         self.simulation_driver = get_nice_hash_driver()
+        self.simulation_ended = False
+        self.simulation_ended_mutex = Lock()
+        self.current_simulation_identifier = EXECUTION_CONFIGS.identifier
+
+    def should_end_simulation(self):
+        self.simulation_ended_mutex.acquire()
+        try:
+            return self.simulation_ended
+        finally:
+            self.simulation_ended_mutex.release()
+
+    def set_end_of_simulation(self):
+        # notify other threads to exit
+        self.simulation_ended_mutex.acquire()
+        try:
+            self.simulation_ended = True
+        finally:
+            self.simulation_ended_mutex.release()
 
     def run(self, should_stop):
         # prepare the simulation database at the beginning of the evaluation
@@ -33,6 +52,7 @@ class SimulationEvaluator(TickPerformer):
             proven_simulation_identifiers=proven_simulation_identifiers)
         # start taking samples if a new simulation is going to happen
         if not is_new_simulation_going_to_happen():
+            self.set_end_of_simulation()
             return
         while True:
             if should_stop():
@@ -42,7 +62,17 @@ class SimulationEvaluator(TickPerformer):
             logger('simulation/evaluator').debug("Updating evaluations at timestamp {0}.".format(current_timestamp))
             # fetch new order samples from the driver and record them in the database
             self.save_new_order_data_samples(current_timestamp=current_timestamp)
+            # check if we are at the time of ending the simulation stop
+            if current_timestamp >= EXECUTION_CONFIGS.simulation_end_timestamp:
+                break
         # TODO: calculate the results of the evaluation and write it to file as proof
+        # write the proof
+        simulation_proof_file_name = "{0}{1}".format(self.current_simulation_identifier,
+                                                     self.SIMULATION_PROOF_NAME_EXTENSION)
+        simulation_proof_file_full_path = os.path.join(EXECUTION_CONFIGS.simulation_summaries_data_dir,
+                                                       simulation_proof_file_name)
+        Path(simulation_proof_file_full_path).touch()
+        self.set_end_of_simulation()
 
     def is_a_daemon(self):
         return False

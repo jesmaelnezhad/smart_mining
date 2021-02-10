@@ -26,6 +26,7 @@ simulation:
   clock_tick_duration: "0.05"
   clock_timestamp_increase_per_tick: "1.0 * MINUTE_SECONDS"
   clock_start_timestamp: "!!timestamp!|||11/22/2019-23:16:24"
+  simulation_end_timestamp: "!!timestamp!|||01/22/2020-23:16:24"
   tick_execution_interval_seconds: "0.5"
   log_level: "logging.INFO"
   clean_simulation_database: "True"

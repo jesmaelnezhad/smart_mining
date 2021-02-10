@@ -82,10 +82,11 @@ if __name__ == '__main__':
             simulation_evaluator.start()
             TICK_PERFORMERS.append(simulation_evaluator)
             log.logger('main').info('Simulation evaluator started.')
-
-        # Just wait in the program
-        # join all tick performers
-        join_tick_performers()
+            while not simulation_evaluator.should_end_simulation():
+                sleep(1)
+            join_tick_performers(stop=True)
+        else:
+            join_tick_performers()
     except KeyboardInterrupt:
         log.logger('main').info('Program terminating upon keyboard interrupt.')
         join_tick_performers(stop=True)
