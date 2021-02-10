@@ -3,7 +3,7 @@ from simulation_evaluator.simulation_evaluator import SimulationEvaluator
 SIMULATION_EVALUATOR = None
 
 
-def get_controller():
+def get_simulation_evaluator():
     global SIMULATION_EVALUATOR
     """
     :return: the controller object

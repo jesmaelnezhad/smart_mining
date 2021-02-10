@@ -1,4 +1,4 @@
-from configuration import is_simulation_run
+from configuration import is_simulation
 from nicehash.realtime_driver import NiceHashRealtimeDriver
 from nicehash.simulation_driver import NiceHashSimulationDriver
 
@@ -11,7 +11,7 @@ def get_nice_hash_driver():
     :return: the nicehash driver object
     """
     if NICE_HASH_DRIVER is None:
-        if is_simulation_run():
+        if is_simulation():
             NICE_HASH_DRIVER = NiceHashSimulationDriver()
         else:
             NICE_HASH_DRIVER = NiceHashRealtimeDriver()

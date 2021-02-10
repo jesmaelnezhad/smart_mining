@@ -23,6 +23,7 @@ class Controller(TickPerformer):
             sleep(self.tick_duration)
             current_timestamp = get_clock().read_timestamp_of_now()
             logger('controller').debug("Updating analytics at timestamp {0}.".format(current_timestamp))
+            pass
 
     def is_a_daemon(self):
         return False

@@ -3,8 +3,9 @@ import traceback
 from time import sleep
 
 from clock import get_clock
-from configuration import EXECUTION_CONFIGS, is_simulation_run
+from configuration import EXECUTION_CONFIGS, is_simulation
 from nicehash import get_nice_hash_driver
+from simulation_evaluator import get_simulation_evaluator
 from utility import log
 from analyzer import get_analyzer
 from controller import get_controller
@@ -20,7 +21,7 @@ def tick(current_timestamp):
     # Update the data in the data bank
     get_database_handler().update_data(up_to_timestamp=current_timestamp)
     # Wake up the controller to perform one tick
-    get_controller().perform_tick(up_to_timestamp=current_timestamp)
+    get_controller().perform_tick(current_timestamp=current_timestamp)
     log.logger('main/tick').info('Periodic logic.')
 
 
@@ -50,7 +51,7 @@ if __name__ == '__main__':
         TICK_PERFORMERS.append(mine_database_updater)
         log.logger('main').info('Mine database updater started.')
 
-        if is_simulation_run():
+        if is_simulation():
             # start the simulation database updater
             simulation_database_updater = get_simulation_database_updater()
             simulation_database_updater.start()
@@ -74,6 +75,13 @@ if __name__ == '__main__':
         nice_hash.start()
         TICK_PERFORMERS.append(nice_hash)
         log.logger('main').info('Nice hash driver started.')
+
+        if is_simulation():
+            # start the simulation evaluator
+            simulation_evaluator = get_simulation_evaluator()
+            simulation_evaluator.start()
+            TICK_PERFORMERS.append(simulation_evaluator)
+            log.logger('main').info('Simulation evaluator started.')
 
         # Just wait in the program
         # join all tick performers

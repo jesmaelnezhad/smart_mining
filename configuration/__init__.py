@@ -4,13 +4,17 @@ from configuration.configs import SimulationConfigs, RealtimeConfigs, RuntimeMod
     REALTIME_CONFIGS
 
 
-def is_simulation_run():
+def is_simulation():
     return RUNTIME_MODE == RuntimeMode.SIMULATION
+
+
+def is_new_simulation_going_to_happen():
+    return EXECUTION_CONFIGS.identifier is not None
 
 
 EXECUTION_CONFIGS = None
 
-if is_simulation_run():
+if is_simulation():
     EXECUTION_CONFIGS = SIMULATION_CONFIGS
 else:
     EXECUTION_CONFIGS = REALTIME_CONFIGS

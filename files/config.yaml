@@ -8,6 +8,8 @@ realtime:
   controller_sleep_duration: "10.0 * MINUTE_SECONDS"
   mine_db_updater_sleep_duration: "1.0 * MINUTE_SECONDS"
   simulation_db_updater_sleep_duration: "1.0 * MINUTE_SECONDS"
+  simulation_evaluator_sleep_duration: "1.0 * MINUTE_SECONDS"
+  nice_hash_close_orders_before_shutdown: "True"
   tick_execution_interval_seconds: "10.0 * MINUTE_SECONDS"
   tick_duration_seconds: "10.0 * MINUTE_SECONDS"
   log_level: "logging.INFO"

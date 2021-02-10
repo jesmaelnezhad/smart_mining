@@ -2,7 +2,7 @@ SET TIME ZONE 'UTC';
 CREATE USER smart_miner WITH ENCRYPTED PASSWORD 'smartminerpa$$w0rd1368';
 CREATE DATABASE smart_miner;
 CREATE DATABASE smart_miner_simulation_data;
-/* CREATE TABLE a_simulation(order_id INTEGER NOT NULL, moment timestamptz NOT NULL, power_limit DOUBLE PRECISION DEFAULT 0.0, price DOUBLE PRECISION DEFAULT 0.0, CONSTRAINT order_status UNIQUE(order_id, moment)); */
+/* CREATE TABLE a_simulation(order_id character(200) NOT NULL, moment timestamptz NOT NULL, power_limit DOUBLE PRECISION DEFAULT 0.0, price DOUBLE PRECISION DEFAULT 0.0, CONSTRAINT order_status UNIQUE(order_id, moment)); */
 GRANT ALL PRIVILEGES ON DATABASE smart_miner TO smart_miner;
 GRANT ALL PRIVILEGES ON DATABASE smart_miner_simulation_data TO smart_miner;
 \c smart_miner

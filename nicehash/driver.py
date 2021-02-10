@@ -1,21 +1,12 @@
+import math
 from time import sleep
 
 from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS
+from configuration.constants import NICE_HASH_LIMIT_CHANGE_PER_SECOND
 from utility.log import logger
-
-
-class NiceHashOrder:
-    def __init__(self, current_timestamp, order_id):
-        self.creation_timestamp = current_timestamp
-        self.last_updated_timestamp = self.creation_timestamp
-        self.order_id = order_id
-        self.price = None
-        self.limit = None
-        self.last_change_timestamp = None
-        self.last_change_requested_limit = None
 
 
 class NiceHashDriver(TickPerformer):
@@ -33,6 +24,7 @@ class NiceHashDriver(TickPerformer):
             sleep(self.tick_duration)
             current_timestamp = get_clock().read_timestamp_of_now()
             self.perform_tick(current_timestamp)
+        self.pre_exit_house_keeping()
 
     def is_a_daemon(self):
         return False
@@ -46,30 +38,43 @@ class NiceHashDriver(TickPerformer):
             "Base class of the driver in use! Performing a tick at timestamp {0}.".format(up_to_timestamp))
         pass
 
-    def set_limit(self, up_to_timestamp, order_id, limit):
+    def pre_exit_house_keeping(self):
         """
-        Sets the limit in nicehash for the given order
+        This function is called before the thread stops and is useful for closing orders if the robot is going down
         :return: None
         """
+        logger('nicehash').warn("Base class of the driver in use! House keeping before shutdown.")
         pass
 
-    def get_limit(self, up_to_timestamp, order_id):
+    def create_order(self, creation_timestamp, initial_limit, initial_price):
         """
-        Gets the limit in nicehash for the given order
-        :return: limit
-        """
-        pass
-
-    def set_price(self, up_to_timestamp, order_id, price):
-        """
-        Sets the price in nicehash for the given order
-        :return: None
+        Creates a new order with the given initial price and limit and returns the order id
+        :param initial_price:
+        :param initial_limit:
+        :param creation_timestamp:
+        :return: order id
         """
         pass
 
-    def get_price(self, up_to_timestamp, order_id):
+    def close_order(self, order_id):
         """
-        Gets the price in nicehash for the given order
-        :return: price
+        Closes the order with given order id
+        :param order_id:
+        :return: True if any matching order was found and False otherwise
+        """
+        pass
+
+    def get_orders(self, order_id=None):
+        """
+        Returns all orders or the one with the given order id (or None if not exists)
+        :param order_id:
+        :return: and array of orders or a single order
+        """
+        pass
+
+    def change_order(self, timestamp, order_id, limit_change=0, price_change=0):
+        """
+        Applies the given change in limit or price in nicehash for the order with the given order id
+        :return: True if any matching order found
         """
         pass
