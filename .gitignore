@@ -5,3 +5,4 @@ nicehash/__pycache__/*
 */__pycache__/*
 vagrant/.vagrant
 files/csv_data
+files/config.yaml
