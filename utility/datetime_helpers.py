@@ -19,7 +19,7 @@ def datetime_string_to_timestamp(datetime_string, datetime_format="%m/%d/%Y-%H:%
     return datetime.datetime.timestamp(date)
 
 
-def calculate_delta_time_ago_timestamp(timestamp=datetime.now(tz=pytz.UTC).timestamp(), years=0, months=0, days=0,
+def calculate_delta_time_ago_timestamp(timestamp=datetime.datetime.now(tz=pytz.UTC).timestamp(), years=0, months=0, days=0,
                                        hours=0, minutes=0, seconds=0,
                                        calculate_time_ahead=False):
     """
