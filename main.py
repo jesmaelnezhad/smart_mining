@@ -12,19 +12,6 @@ from controller import get_controller
 from data_bank import get_database_handler, get_database_updater, get_simulation_database_updater
 
 
-def tick(current_timestamp):
-    """
-    Everyting that repeats at each tick
-    :param current_timestamp: the timestamp of when the tick is happening
-    :return: None
-    """
-    # Update the data in the data bank
-    get_database_handler().update_data(up_to_timestamp=current_timestamp)
-    # Wake up the controller to perform one tick
-    get_controller().perform_tick(current_timestamp=current_timestamp)
-    log.logger('main/tick').info('Periodic logic.')
-
-
 TICK_PERFORMERS = []
 CONTROLLER = None
 
