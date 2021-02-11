@@ -24,7 +24,7 @@ class MineDatabaseUpdater(DatabaseUpdater):
         :return: None
         """
         super().update_data(up_to_timestamp)
-        # TODO logic needed to update the simulation database
+        # TODO logic needed to update the mine database
         logger('mine-database').debug("Updating data up to timestamp {0}.".format(up_to_timestamp))
 
 
