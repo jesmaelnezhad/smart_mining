@@ -1,5 +1,3 @@
-from _curses import endwin
-
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from configuration import EXECUTION_CONFIGS
 from configuration.constants import SLUSHPOOL_ID
