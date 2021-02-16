@@ -9,7 +9,7 @@ from configuration import EXECUTION_CONFIGS
 from utility.datetime_helpers import size_in_seconds
 from utility.log import logger
 from data_bank import mine_database as mine_db
-
+from configuration import constants
 
 
 class AverageWindowMetric:
@@ -102,17 +102,24 @@ class AverageWindowMetric:
 
     def calculate_new_window_values_and_boundaries(self):
         """
-        When called, the object should return a tuple of two lists like (new_values, new_boundaries)
+        When called, the object should return a tuple of two lists like (new_boundaries, new_values)
         :return:
         """
         pass
 
+    def get_identifier_key(self):
+        """
+        returns a string to specify the type of this metric
+        :return: name of the identifier
+        """
+        pass
 
-class AverageWindowBlockCount(AverageWindowMetric):
+
+class AveragePoolBlockCount(AverageWindowMetric):
     def calculate_new_window_values_and_boundaries(self):
         """
-        When called, the object should return a tuple of two lists like (new_values, new_boundaries)
-        :return:
+        When called, calculates block count of a pool on window boundaries
+        :return: a tuple of two lists in this order (boundaries, values)
         """
         # get boundary values
         boundaries = self.get_short_window_boundaries()
@@ -122,22 +129,92 @@ class AverageWindowBlockCount(AverageWindowMetric):
         for i in range(0, len(boundaries)):
             end_timestamp = boundaries[i]
             begin_timestamp = end_timestamp - self.short_window_length
-            values.append(len(mine_db_handler.get_blocks_between(begin_timestamp,end_timestamp)))
+            values.append(len(mine_db_handler.get_blocks_between(begin_timestamp, end_timestamp)))
         return boundaries, values
+
+    def get_identifier_key(self):
+        return constants.METRIC_POOL_BLOCK_COUNT_IDENTIFIER
+
+
+class AveragePoolHashPower(AverageWindowMetric):
+    def calculate_new_window_values_and_boundaries(self):
+        """
+        When called, calculates average pool hash power on window boundaries
+        :return: a tuple of two list in this order (boundaries, values)
+        """
+        # get boundary values
+        boundaries = self.get_short_window_boundaries()
+        # TODO get data from database
+        values = []
+        return boundaries, values
+
+    def get_identifier_key(self):
+        return constants.METRIC_POOL_HASH_POWER_IDENTIFIER
+
+
+class AverageNetworkHashPower(AverageWindowMetric):
+    def calculate_new_window_values_and_boundaries(self):
+        """
+        When called, calculates average network hash power on window boundaries
+        :return: a tuple of two list in this order (boundaries, values)
+        """
+        # get boundary values
+        boundaries = self.get_short_window_boundaries()
+        # TODO get data from database
+        values = []
+        return boundaries, values
+
+    def get_identifier_key(self):
+        return constants.METRIC_NETWORK_HASH_POWER_IDENTIFIER
+
+
+class AverageNetworkBlockCount(AverageWindowMetric):
+    def calculate_new_window_values_and_boundaries(self):
+        """
+        When called, calculates block counts of network on window boundaries
+        :return: a tuple of two list in this order (boundaries, values)
+        """
+        # get boundary values
+        boundaries = self.get_short_window_boundaries()
+        # TODO get data from database
+        values = []
+        return boundaries, values
+
+    def get_identifier_key(self):
+        return constants.METRIC_NETWORK_BLOCK_COUNT_IDENTIFIER
 
 
 class RecentHistoryStatistics:
     def __init__(self):
-        #
         # Each member is a tuple window average window metric container
-        average_window_metric_containers = [
-            AverageWindowBlockCount(short_window_length_seconds=size_in_seconds(days=1),
+        self.average_window_metric_containers = [
+            AveragePoolBlockCount(short_window_length_seconds=size_in_seconds(days=1),
+                                  large_window_length_seconds=size_in_seconds(days=10)),
+            AveragePoolBlockCount(short_window_length_seconds=size_in_seconds(days=1),
+                                  large_window_length_seconds=size_in_seconds(days=50)),
+            AveragePoolBlockCount(short_window_length_seconds=size_in_seconds(days=1),
+                                  large_window_length_seconds=size_in_seconds(days=250)),
+            AveragePoolHashPower(short_window_length_seconds=size_in_seconds(days=1),
+                                 large_window_length_seconds=size_in_seconds(days=10)),
+            AveragePoolHashPower(short_window_length_seconds=size_in_seconds(days=1),
+                                 large_window_length_seconds=size_in_seconds(days=50)),
+            AveragePoolHashPower(short_window_length_seconds=size_in_seconds(days=1),
+                                 large_window_length_seconds=size_in_seconds(days=250)),
+            AverageNetworkHashPower(short_window_length_seconds=size_in_seconds(days=1),
                                     large_window_length_seconds=size_in_seconds(days=10)),
-            AverageWindowBlockCount(short_window_length_seconds=size_in_seconds(days=1),
+            AverageNetworkHashPower(short_window_length_seconds=size_in_seconds(days=1),
                                     large_window_length_seconds=size_in_seconds(days=50)),
-            AverageWindowBlockCount(short_window_length_seconds=size_in_seconds(days=1),
+            AverageNetworkHashPower(short_window_length_seconds=size_in_seconds(days=1),
                                     large_window_length_seconds=size_in_seconds(days=250))
         ]
+
+    def get_identifier(self):
+        identifier_list = []
+        for metric in self.average_window_metric_containers:
+            identifier_list.append("{0}-{1}-{2}".format(metric.get_identifier_key(),
+                                                        metric.short_window_length,
+                                                        metric.large_window_length))
+        return identifier_list
 
 
 class Analyzer(TickPerformer):
@@ -146,7 +223,9 @@ class Analyzer(TickPerformer):
         A singleton class that is the analyzer
         """
         super().__init__()
-        self.tick_duration = calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.analyzer_sleep_duration)
+        self.tick_duration = calculate_tick_duration_from_sleep_duration\
+            (EXECUTION_CONFIGS.analyzer_sleep_duration)
+        self.statistics = RecentHistoryStatistics()
 
     def run(self, should_stop):
         while True:
@@ -154,6 +233,7 @@ class Analyzer(TickPerformer):
                 break
             sleep(self.tick_duration)
             current_timestamp = get_clock().read_timestamp_of_now()
+            self.update_stats(current_timestamp)
             logger('analyzer').debug("Updating analytics at timestamp {0}.".format(current_timestamp))
 
     def post_run(self):
@@ -161,3 +241,10 @@ class Analyzer(TickPerformer):
 
     def is_a_daemon(self):
         return False
+
+    def update_stats(self, current_timestamp):
+        metric_container = self.statistics.average_window_metric_containers
+        for stat in metric_container:
+            stat.set_latest_timestamp(current_timestamp)
+            stat.update_window_values()
+
