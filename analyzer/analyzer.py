@@ -8,6 +8,8 @@ from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS
 from utility.datetime_helpers import size_in_seconds
 from utility.log import logger
+from data_bank import mine_database as mine_db
+
 
 
 class AverageWindowMetric:
@@ -15,6 +17,7 @@ class AverageWindowMetric:
     Any metric that is calculated in a short window, and is averaged over
     all instances of such window over a larger time window in the past
     """
+
     def __init__(self, short_window_length_seconds, large_window_length_seconds):
         self.short_window_length = short_window_length_seconds
         self.large_window_length = large_window_length_seconds
@@ -35,12 +38,20 @@ class AverageWindowMetric:
         finally:
             self.window_values_mutex.release()
 
-    def get_short_window_boundaries(self):
+    def get_short_window_boundaries(self, latest_timestamp=None):
         """
         Calculates the boundaries of the short windows that exist in the larger interval
         :param latest_timestamp: the larger window is defined by its length and its end point which is this argument
         :return: the list of window boundaries from latest to oldest
         """
+
+        # check if input latest timestamp parameter is not null, then add it as latest timestamp variable of the object
+        if latest_timestamp is not None:
+            self.set_latest_timestamp(latest_timestamp)
+        # if object has not latest timestamp value yet, short window boundaries cannot be set
+        if self.latest_timestamp is None:
+            return None
+        # set short window boundaries if object has latest timestamp value
         self.window_values_mutex.acquire()
         try:
             window_boundaries = []
@@ -60,11 +71,14 @@ class AverageWindowMetric:
         window_boundaries, window_values = self.calculate_new_window_values_and_boundaries()
         new_window_info = []
         new_boundaries = self.get_short_window_boundaries()
-        if window_boundaries != new_boundaries or len(window_values) != len(window_boundaries):
+        if self.latest_timestamp is None:
+            new_window_info = None
+        elif window_boundaries != new_boundaries or len(window_values) != len(window_boundaries):
             new_window_info = None
         else:
             for i in range(0, len(window_boundaries)):
                 new_window_info.append((window_boundaries[i], window_values[i],))
+        self.window_values_mutex.acquire()
         try:
             self.window_values = new_window_info
         finally:
@@ -84,7 +98,7 @@ class AverageWindowMetric:
             self.window_values_mutex.release()
 
     def get_average_on_all_values(self):
-        return mean([v[1] for v in self.get_values()])
+        return mean([v[1] for v in self.get_window_values()])
 
     def calculate_new_window_values_and_boundaries(self):
         """
@@ -100,9 +114,16 @@ class AverageWindowBlockCount(AverageWindowMetric):
         When called, the object should return a tuple of two lists like (new_values, new_boundaries)
         :return:
         """
+        # get boundary values
         boundaries = self.get_short_window_boundaries()
-        # TODO: calculate new values
-        return [], boundaries
+        # get data from database to fill data
+        values = []
+        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        for i in range(0, len(boundaries)):
+            end_timestamp = boundaries[i]
+            begin_timestamp = end_timestamp - self.short_window_length
+            values.append(len(mine_db_handler.get_blocks_between(begin_timestamp,end_timestamp)))
+        return boundaries, values
 
 
 class RecentHistoryStatistics:

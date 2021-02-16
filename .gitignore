@@ -6,3 +6,11 @@ nicehash/__pycache__/*
 vagrant/.vagrant
 files/csv_data
 files/config.yaml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/smart_mining.iml
+.idea/vcs.xml
+.idea/workspace.xml
+test.py
+test.py
