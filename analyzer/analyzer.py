@@ -144,12 +144,100 @@ class AveragePoolHashPower(AverageWindowMetric):
         """
         # get boundary values
         boundaries = self.get_short_window_boundaries()
-        # TODO get data from database
+        # get data from database to fill data
         values = []
+        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        for i in range(0, len(boundaries)):
+            end_timestamp = boundaries[i]
+            begin_timestamp = end_timestamp - self.short_window_length
+            data = mine_db_handler.get_slushpool_info(begin_timestamp, end_timestamp,
+                                                      True, ['hash_rate'])
+            raw_data = []
+            for record in data:
+                raw_data.append((record[0], record[1][0]))
+            values.append(get_weighted_average(begin_timestamp, end_timestamp, raw_data))
         return boundaries, values
 
     def get_identifier_key(self):
         return constants.METRIC_POOL_HASH_POWER_IDENTIFIER
+
+
+class AveragePoolActiveWorkers(AverageWindowMetric):
+    def calculate_new_window_values_and_boundaries(self):
+        """
+        When called, calculates average pool active workers on window boundaries
+        :return: a tuple of two list in this order (boundaries, values)
+        """
+        # get boundary values
+        boundaries = self.get_short_window_boundaries()
+        # get data from database to fill data
+        values = []
+        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        for i in range(0, len(boundaries)):
+            end_timestamp = boundaries[i]
+            begin_timestamp = end_timestamp - self.short_window_length
+            data = mine_db_handler.get_slushpool_info(begin_timestamp, end_timestamp,
+                                                      True, ['active_workers'])
+            raw_data = []
+            for record in data:
+                raw_data.append((record[0], record[1][0]))
+            values.append(get_weighted_average(begin_timestamp, end_timestamp, raw_data))
+        return boundaries, values
+
+    def get_identifier_key(self):
+        return constants.METRIC_POOL_ACTIVE_WORKERS_IDENTIFIER
+
+
+class AveragePoolActiveUsers(AverageWindowMetric):
+    def calculate_new_window_values_and_boundaries(self):
+        """
+        When called, calculates average pool active users on window boundaries
+        :return: a tuple of two list in this order (boundaries, values)
+        """
+        # get boundary values
+        boundaries = self.get_short_window_boundaries()
+        # get data from database to fill data
+        values = []
+        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        for i in range(0, len(boundaries)):
+            end_timestamp = boundaries[i]
+            begin_timestamp = end_timestamp - self.short_window_length
+            data = mine_db_handler.get_slushpool_info(begin_timestamp, end_timestamp,
+                                                      True, ['active_users'])
+            raw_data = []
+            for record in data:
+                raw_data.append((record[0], record[1][0]))
+            values.append(get_weighted_average(begin_timestamp, end_timestamp, raw_data))
+        return boundaries, values
+
+    def get_identifier_key(self):
+        return constants.METRIC_POOL_ACTIVE_USERS_IDENTIFIER
+    
+
+class AveragePoolScoringHashPower(AverageWindowMetric):
+    def calculate_new_window_values_and_boundaries(self):
+        """
+        When called, calculates average pool scoring hash power on window boundaries
+        :return: a tuple of two list in this order (boundaries, values)
+        """
+        # get boundary values
+        boundaries = self.get_short_window_boundaries()
+        # get data from database to fill data
+        values = []
+        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        for i in range(0, len(boundaries)):
+            end_timestamp = boundaries[i]
+            begin_timestamp = end_timestamp - self.short_window_length
+            data = mine_db_handler.get_slushpool_info(begin_timestamp, end_timestamp,
+                                                      True, ['scoring_hash_rate'])
+            raw_data = []
+            for record in data:
+                raw_data.append((record[0], record[1][0]))
+            values.append(get_weighted_average(begin_timestamp, end_timestamp, raw_data))
+        return boundaries, values
+
+    def get_identifier_key(self):
+        return constants.METRIC_POOL_SCORING_HASH_POWER_IDENTIFIER
 
 
 class AverageNetworkHashPower(AverageWindowMetric):
@@ -248,3 +336,34 @@ class Analyzer(TickPerformer):
             stat.set_latest_timestamp(current_timestamp)
             stat.update_window_values()
 
+
+def get_weighted_average(begin_timestamp, end_timestamp, raw_data):
+    """
+    returns weighted average of a parameter on a time span
+    :parameter begin_timestamp: start timestamp of time span
+    :parameter end_timestamp: end timestamp of time span
+    :parameter raw_data: list of tuples of the format (moment, value)
+    :return: averaged value of the parameter on specified time span
+    """
+    # first check for order of timestamp values
+    if end_timestamp < begin_timestamp:
+        begin_timestamp, end_timestamp = end_timestamp, begin_timestamp
+
+    # sort list from oldest to newest values
+    # TODO sort list
+
+    # calculate average value
+    value = 0
+    time_span = end_timestamp - begin_timestamp
+    for i in range(0, len(raw_data)):
+        if i == 0:
+            lower_timestamp = begin_timestamp - (raw_data[i][0] - begin_timestamp)
+        else:
+            lower_timestamp = raw_data[i - 1][0]
+        if i == len(raw_data) - 1:
+            higher_timestamp = end_timestamp + (end_timestamp - raw_data[i][0])
+        else:
+            higher_timestamp = raw_data[i + 1][0]
+        value += (higher_timestamp - lower_timestamp) / 2 / time_span * raw_data[i][1]
+
+    return value
