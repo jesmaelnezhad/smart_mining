@@ -126,7 +126,7 @@ class DatabaseHandler:
         """
         if owner is None or key is None:
             raise DatabaseException(
-                "Key value put failed because owner or key was None: owner: {0}, key: {1}".format(owner, key))
+                "Key value get failed because owner or key was None: owner: {0}, key: {1}".format(owner, key))
 
         sql_query = "SELECT value FROM key_values WHERE owner = '{0}' AND key = '{1}';".format(owner, key)
         results = self.execute_select(sql_query)

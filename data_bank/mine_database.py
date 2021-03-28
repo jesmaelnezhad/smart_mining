@@ -4,6 +4,7 @@ from configuration.constants import SLUSHPOOL_ID
 from data_bank.database import DatabaseHandler, DatabaseUpdater
 from utility.datetime_helpers import datetime_string_to_timestamp
 from utility.log import logger
+import calendar
 
 
 class MineDatabaseUpdater(DatabaseUpdater):
@@ -91,3 +92,69 @@ class MineDatabaseHandler(DatabaseHandler):
                                            "" if number_of_blocks is None else "LIMIT {0}".format(number_of_blocks))
         blocks = self.execute_select(select_sql_query=sql_query)
         return [(b[0], b[1],) for b in blocks]
+
+    def get_slushpool_info(self, begin_timestamp=0, end_timestamp=datetime_string_to_timestamp(datetime_string=None),
+                           sort_old_to_new=True, fields_name=None):
+        """
+        Returns a list of pool info with time stamp for slushpool from database
+        :param sort_old_to_new: results are sorted by moment in ascending order if True, and descending if False
+        :param fields_name: a list of fields name to be retrieved from database, if None all field will return
+        :param begin_timestamp:
+        :param end_timestamp:
+        :return: A list of tuples of the form (moment timestamp, [fields values])
+        """
+        # check fields names
+        valid_names = ['hash_rate', 'scoring_hash_rate',
+                       'active_users', 'active_workers']
+        if fields_name is None:
+            fields_name = valid_names.copy()
+        valid_fields = True
+        for field in fields_name:
+            if field not in valid_names:
+                valid_fields = False
+                break
+        if not valid_fields:
+            return None
+
+        # retrieve info from database
+        sql_query = """SELECT moment,{1} FROM {2}
+        WHERE moment BETWEEN to_timestamp({3}) AND to_timestamp({4})
+        ORDER BY moment {5};""".format("%m/%d/%Y-%H:%M:%S", ",".join(fields_name),
+                                       self.SLUSHPOOL_TABLE_NAME,
+                                       begin_timestamp, end_timestamp,
+                                       "ASC" if sort_old_to_new else "DESC")
+        pool_info = self.execute_select(select_sql_query=sql_query)
+        return [(info[0].timestamp(), info[1:]) for info in pool_info]
+
+    def get_network_info(self, begin_timestamp=0, end_timestamp=datetime_string_to_timestamp(datetime_string=None),
+                         sort_old_to_new=True, fields_name=None):
+        """
+        Returns a list of pool info with time stamp for slushpool from database
+        :param sort_old_to_new: results are sorted by moment in ascending order if True, and descending if False
+        :param fields_name: a list of fields name to be retrieved from database, if None all field will return
+        :param begin_timestamp:
+        :param end_timestamp:
+        :return: A list of tuples of the form (moment timestamp, [fields values])
+        """
+        # check fields names
+        valid_names = ['hash_rate', 'scoring_hash_rate',
+                       'active_users', 'active_workers']
+        if fields_name is None:
+            fields_name = valid_names.copy()
+        valid_fields = True
+        for field in fields_name:
+            if field not in valid_names:
+                valid_fields = False
+                break
+        if not valid_fields:
+            return None
+
+        # retrieve info from database
+        sql_query = """SELECT moment,{1} FROM {2}
+        WHERE moment BETWEEN to_timestamp({3}) AND to_timestamp({4})
+        ORDER BY moment {5};""".format("%m/%d/%Y-%H:%M:%S", ",".join(fields_name),
+                                       self.SLUSHPOOL_TABLE_NAME,
+                                       begin_timestamp, end_timestamp,
+                                       "ASC" if sort_old_to_new else "DESC")
+        pool_info = self.execute_select(select_sql_query=sql_query)
+        return [(info[0].timestamp(), info[1:]) for info in pool_info]

@@ -53,3 +53,13 @@ def size_in_seconds(days, hours=0, minutes=0, seconds=0):
     """
     delta = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
     return int(delta.total_seconds())
+
+
+def timestamp_to_datetime_string(timestamp, datetime_format="%m/%d/%Y-%H:%M:%S"):
+    """
+    returns datetime string from given timestamp using datetime format
+    :param timestamp: time stamp value to be converted
+    :param datetime_format: string format for the converted time
+    :return: date time string presenting time stamp value
+    """
+    return datetime.datetime.utcfromtimestamp(timestamp).strftime(datetime_format)

@@ -1,3 +1,27 @@
+from data_bank import mine_database as mine_db
+from configuration import EXECUTION_CONFIGS
+from utility.datetime_helpers import datetime_string_to_timestamp
+from analyzer.analyzer import AverageWindowBlockCount
+from utility.datetime_helpers import size_in_seconds
+
+average_block_count = AverageWindowBlockCount(size_in_seconds(days=1),
+                                              size_in_seconds(days=30))
+average_block_count.set_latest_timestamp(datetime_string_to_timestamp('04/01/2020-0:0:0'))
+# average_block_count.calculate_new_window_values_and_boundaries()
+average_block_count.update_window_values()
+values = average_block_count.get_window_values()
+print(values)
+
+
+# user = EXECUTION_CONFIGS.db_user
+# password = EXECUTION_CONFIGS.db_password
+# mine_db_handler = mine_db.MineDatabaseHandler(user, password)
+# begin_timestamp = datetime_string_to_timestamp('04/05/2020-00:00:00')
+# end_timestamp = datetime_string_to_timestamp('04/08/2020-00:00:00')
+# blocks = mine_db_handler.get_blocks_between(begin_timestamp, end_timestamp)
+# print(len(blocks))
+
+
 # from datetime import datetime
 #
 # import pytz
