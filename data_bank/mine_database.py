@@ -1,10 +1,17 @@
+import datetime
+import time
+import random
+
+import pytz
+
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from configuration import EXECUTION_CONFIGS
-from configuration.constants import SLUSHPOOL_ID
-from data_bank.database import DatabaseHandler, DatabaseUpdater
+from configuration.constants import SLUSHPOOL_ID, SLUSHPOOL_DATA_FETCH_START_UTC_TIMESTAMP, SLUSHPOOL_API_BASE_URL, \
+    DATA_FETCH_API_INTER_DELAY
+from data_bank.database import DatabaseHandler, DatabaseUpdater, DatabaseException
 from utility.datetime_helpers import datetime_string_to_timestamp
 from utility.log import logger
-import calendar
+import requests
 
 
 class MineDatabaseUpdater(DatabaseUpdater):
@@ -23,8 +30,70 @@ class MineDatabaseUpdater(DatabaseUpdater):
         :return: None
         """
         super().update_data(up_to_timestamp)
-        # TODO logic needed to update the mine database
+
+        # Updating the block table
+        self.update_blocks(up_to_timestamp)
+
         logger('mine-database').debug("Updating data up to timestamp {0}.".format(up_to_timestamp))
+
+    def update_blocks(self, up_to_timestamp, beginning=SLUSHPOOL_DATA_FETCH_START_UTC_TIMESTAMP, pool_id=SLUSHPOOL_ID):
+        """
+        :param pool_id: The pool whose blocks we want
+        :param beginning: If the blocks table is empty and should_fill_empty_db is True in configs, it starts from
+        this moment to fill the blocks table
+        :param up_to_timestamp: Makes sure the data of the blocks and pools tables are up to date from the beginning
+        until up_to_timestamp
+        :return: None
+        """
+        if not EXECUTION_CONFIGS.should_use_api:
+            return
+        # When is now?
+        now_dt = datetime.datetime.fromtimestamp(up_to_timestamp, tz=pytz.UTC)
+
+        # Check where the beginning is
+        latest_block = self.handler.get_latest_block_info(pool_id=pool_id)
+        if latest_block is None:
+            if EXECUTION_CONFIGS.should_fill_empty_db:
+                beg_dt = datetime.datetime.fromtimestamp(beginning, tz=pytz.UTC)
+            else:
+                return
+        else:
+            block_id, block_moment = latest_block
+            beg_dt = block_moment
+
+        # Start day by day from the beginning
+        while beg_dt <= now_dt:
+            self.update_blocks_at_date(year=beg_dt.year, month=beg_dt.month, day=beg_dt.day)
+            beg_dt += datetime.timedelta(days=1)
+
+    def update_blocks_at_date(self, year, month, day, filter_pool_id=SLUSHPOOL_ID):
+        base_url = SLUSHPOOL_API_BASE_URL
+        url = base_url + "/{0}{1}{2}".format(year, str(month).zfill(2), str(day).zfill(2))
+        logger("mine-db/update-blocks").info(url)
+        response = requests.get(url)
+        time.sleep(5.0)
+        factor = 1
+        while response.status_code != 200:
+            print(response.status_code)
+            time.sleep(DATA_FETCH_API_INTER_DELAY * factor)
+            response = requests.get(url)
+            factor = min(factor * 2, 4)
+        data_list = response.json()['data']
+        if data_list is None:
+            return
+        for block in data_list:
+            block_id = block['height']
+            timestamp = block['timestamp']
+            pool_name = block['extras']['pool_name']
+            pool_id = self.handler.get_pool_id(str(pool_name).lower())
+            if pool_id != filter_pool_id:
+                continue
+            sql_query = """INSERT INTO blocks(id, moment, pool_id) VALUES ({0},
+             to_timestamp({1}), {2}) ON CONFLICT DO NOTHING;""".format(block_id, timestamp, pool_id)
+            try:
+                self.handler.execute_write(write_sql_query=sql_query)
+            except DatabaseException:
+                logger('mine-database/updater').error("Error: inserting block with id {0}".format(block_id))
 
 
 class MineDatabaseHandler(DatabaseHandler):
@@ -39,6 +108,21 @@ class MineDatabaseHandler(DatabaseHandler):
         A singleton class that is the interface of our data bank database
         """
         super().__init__(user, password, database, host, port)
+
+    def get_pool_id(self, pool_name):
+        """
+        Returns the id of the given pool; and inserts one if not exist
+        :param pool_name: The name of the pool
+        :return: pool_id
+        """
+        sql_query = "SELECT id FROM pools WHERE name = '{0}';".format(pool_name)
+        ids = self.execute_select(sql_query)
+        if len(ids) == 0:
+            sql_query = "INSERT INTO pools(name) VALUES ('{0}') RETURNING id;".format(pool_name)
+            pool_id = self.execute_write(sql_query, return_generated_id=True)
+        else:
+            pool_id = ids[0][0]
+        return pool_id
 
     def get_latest_block_info(self, pool_id=SLUSHPOOL_ID,
                               prior_to_moment=None,

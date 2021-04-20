@@ -1,5 +1,5 @@
 import datetime
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 from dateutil.relativedelta import relativedelta
 import pytz
@@ -16,7 +16,7 @@ def datetime_string_to_timestamp(datetime_string, datetime_format="%m/%d/%Y-%H:%
         return datetime.datetime.now(tz=pytz.UTC).timestamp()
 
     date = datetime.datetime.strptime(datetime_string, datetime_format)
-    return datetime.datetime.timestamp(date)
+    return date.replace(tzinfo=timezone.utc).timestamp()
 
 
 def calculate_delta_time_ago_timestamp(timestamp=datetime.datetime.now(tz=pytz.UTC).timestamp(), years=0, months=0, days=0,

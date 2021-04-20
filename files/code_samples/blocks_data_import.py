@@ -32,8 +32,27 @@ def update_block_data(dbName):
     latestBlockNo = get_latest_block()
     # print(dbLastBlock)
     update_database(conn, dbLastBlock + 1, latestBlockNo)
-    
-    
+
+
+def get_blocks_at_date(year, month, day):
+    base_url = "http://chain.api.btc.com/v3/block/date/"
+    url = base_url + "{0}{1}{2}".format(year, str(month).zfill(2), str(day).zfill(2))
+    print(url)
+    response = requests.get(url)
+    while response.status_code != 200:
+        print(response.status_code)
+        time.sleep(0.1)
+        response = requests.get(url)
+    data_list = response.json()['data']
+    for block in data_list:
+        id = block['height']
+        timestamp = block['timestamp']
+        pool_name = block['extras']['pool_name']
+        print("test 2020 / 12 / 15 => {0}".format(id))
+
+get_blocks_at_date(2020, 12, 15)
+
+
 def update_database(conn, first, last):
     """
     add block data for total range between first and last block IDs to the database

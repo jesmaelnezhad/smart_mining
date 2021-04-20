@@ -57,15 +57,9 @@ class DatabaseUpdater(TickPerformer):
         :return: None
         """
         # NOTE: this method should execute asynchronically
-
-        # TODO 1. Check the data directory for any new data files to load into the database
         new_csv_files = self.check_new_data_files_to_load()
         if len(new_csv_files) != 0:
             self.load_new_csv_files(new_csv_files)
-
-        # TODO 2. Check the APIs to see if there is any new data to fetch and insert into the database
-
-        # TODO 3: log some status of the database
 
     def init_loaded_data_files_info(self):
         stored_value = self.handler.key_value_get(self.KV_OWNER_KEY, self.LOADED_DATA_FILES_LIST_KEY)
