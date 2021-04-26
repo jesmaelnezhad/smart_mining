@@ -4,6 +4,7 @@ from time import sleep
 
 from clock import get_clock
 from configuration import EXECUTION_CONFIGS, is_simulation
+from learner import get_learner
 from nicehash import get_nice_hash_driver
 from simulation_evaluator import get_simulation_evaluator
 from utility import log
@@ -69,6 +70,12 @@ if __name__ == '__main__':
         analyzer.start()
         TICK_PERFORMERS.append(analyzer)
         log.logger('main').info('Analyzer started.')
+
+        # start the learner
+        learner = get_learner()
+        learner.start()
+        TICK_PERFORMERS.append(learner)
+        log.logger('main').info('Learner started.')
 
         # start the nice hash driver
         nice_hash = get_nice_hash_driver()

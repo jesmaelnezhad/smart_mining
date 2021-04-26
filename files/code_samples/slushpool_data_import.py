@@ -47,18 +47,26 @@ data['btc'] = btc
 # print(data)
 
 
-url = 'https://slushpool.com/api/v1/web/scalar/tree/'
+url = 'https://slushpool.com'
+
+client = requests.session()
+client.get(url)
+
+csrftoken = client.cookies['csrftoken']
+
+data_url = url + "/api/v1/web/scalar/tree/"
+
 header = dict()
 header['content-type'] = 'application/json'
 header['accept'] = 'application/json'
-header['x-csrftoken'] = 'sWYbkb6rMcPHfiN6Cs1aeUJO0nF17LS0XYTeH7tayuzbDNh4fpgWhXkIb8PGjHmB'
-header['origin'] = 'https://slushpool.com'
-header['referer'] = 'https://slushpool.com/stats/?c=btc'
-# header['cookie'] = 'csrftoken=sWYbkb6rMcPHfiN6Cs1aeUJO0nF17LS0XYTeH7tayuzbDNh4fpgWhXkIb8PGjHmB; _ga=GA1.2.598068749.1597170975; __cfduid=d89828d8521c0749a22842738e75dea471611351016; cf_clearance=424cbcf0671d4b94a0d8410557844d8f6026bd40-1612275211-0-150; sessionid=w345hruq79pasyhc5kwiiefjo3at692a'
-header['cookie'] = 'csrftoken=sWYbkb6rMcPHfiN6Cs1aeUJO0nF17LS0XYTeH7tayuzbDNh4fpgWhXkIb8PGjHmB;'
-response = requests.post(url, data = json.dumps(data), headers = header)
+header['x-csrftoken'] = csrftoken
+header['origin'] = url
+header['referer'] = url
+header['cookie'] = 'csrftoken={0};'.format(csrftoken)
+response = client.post(data_url, data=json.dumps(data), headers = header)
 x = response.json()
 result = x['data']['btc']['timeseries_5m']['pool']
-print(len(result))
-print(result['min_used_slot'])
+
+print(result)
+
 

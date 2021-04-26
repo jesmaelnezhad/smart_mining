@@ -57,6 +57,8 @@ class TickPerformer:
         pass
 
     def is_a_daemon(self):
+        # Daemon threads run in the background and they are killed automatically when the
+        # main thread exits.
         pass
 
 
