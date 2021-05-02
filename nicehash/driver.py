@@ -5,8 +5,27 @@ from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS
-from configuration.constants import NICE_HASH_LIMIT_CHANGE_PER_SECOND
+from configuration.constants import SLUSHPOOL_ID
 from utility.log import logger
+
+
+class ActiveOrderInfo:
+    def __init__(self, creation_timestamp, order_id, limit, price, budget_left, pool_id=SLUSHPOOL_ID):
+        self.creation_timestamp = creation_timestamp
+        self.order_id = order_id
+        self.limit = limit
+        self.price = price
+        self.budget_left = budget_left
+        self.pool_id = pool_id
+
+    def get_limit(self):
+        return self.limit
+
+    def get_price(self):
+        return self.price
+
+    def get_budget_left(self):
+        return self.budget_left
 
 
 class NiceHashDriver(TickPerformer):
@@ -55,7 +74,7 @@ class NiceHashDriver(TickPerformer):
         :param initial_price:
         :param initial_limit:
         :param creation_timestamp:
-        :return: order id
+        :return: ActiveOrderInfo object
         """
         pass
 

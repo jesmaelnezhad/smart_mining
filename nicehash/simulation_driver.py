@@ -2,13 +2,14 @@ from threading import Lock
 
 import math
 
+from clock import get_clock
 from configuration import EXECUTION_CONFIGS
 from configuration.constants import NICE_HASH_LIMIT_CHANGE_PER_SECOND
-from nicehash.driver import NiceHashDriver
+from nicehash.driver import NiceHashDriver, ActiveOrderInfo
 from utility.log import logger
 
 
-class NiceHashOrder:
+class NiceHashOrder(ActiveOrderInfo):
     class OrderChange:
         def __init__(self, change_timestamp, limit_change=0, price_change=0):
             self.timestamp = change_timestamp
@@ -16,8 +17,8 @@ class NiceHashOrder:
             self.price_change = price_change
 
     def __init__(self, current_timestamp, order_id, initial_limit, initial_price):
-        self.creation_timestamp = current_timestamp
-        self.order_id = order_id
+        super().__init__(creation_timestamp=current_timestamp, order_id=order_id, limit=initial_limit,
+                         price=initial_price, budget_left=0)
         self.changes = []
         initial_change = NiceHashOrder.OrderChange(current_timestamp, limit_change=initial_limit,
                                                    price_change=initial_price)
@@ -45,6 +46,14 @@ class NiceHashOrder:
                 continue
             price_change += c.price_change
         return price_change
+
+    def get_limit(self):
+        current_timestamp = get_clock().read_timestamp_of_now()
+        return self.calculate_limit_at(current_timestamp)
+
+    def get_price(self):
+        current_timestamp = get_clock().read_timestamp_of_now()
+        return self.calculate_price_at(current_timestamp)
 
 
 class NiceHashSimulationDriver(NiceHashDriver):
@@ -84,14 +93,14 @@ class NiceHashSimulationDriver(NiceHashDriver):
         :param initial_price:
         :param initial_limit:
         :param creation_timestamp:
-        :return: order id
+        :return: ActiveOrderInfo object
         """
         new_order_id = generate_order_id(creation_timestamp)
         new_order = NiceHashOrder(creation_timestamp, new_order_id, initial_limit, initial_price)
         self.orders_mutex.acquire()
         try:
             self.orders.append(new_order)
-            return new_order_id
+            return new_order
         finally:
             self.orders_mutex.release()
 
