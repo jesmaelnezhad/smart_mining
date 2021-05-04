@@ -68,12 +68,13 @@ class NiceHashDriver(TickPerformer):
         logger('nicehash').warn("Base class of the driver in use! House keeping before shutdown.")
         pass
 
-    def create_order(self, creation_timestamp, initial_limit, initial_price):
+    def create_order(self, creation_timestamp, initial_limit, initial_price, order_id=None):
         """
         Creates a new order with the given initial price and limit and returns the order id
         :param initial_price:
         :param initial_limit:
         :param creation_timestamp:
+        :param order_id: will be used if given (in the simulation mode), order_id=None
         :return: ActiveOrderInfo object
         """
         pass

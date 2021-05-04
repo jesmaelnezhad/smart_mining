@@ -7,9 +7,10 @@ from configuration import EXECUTION_CONFIGS
 from configuration.constants import NICE_HASH_LIMIT_CHANGE_PER_SECOND
 from nicehash.driver import NiceHashDriver, ActiveOrderInfo
 from utility.log import logger
+from utility.thread_safe_containers import ThreadSafeDictionary
 
 
-class NiceHashOrder(ActiveOrderInfo):
+class SimulationActiveIOrderInfo(ActiveOrderInfo):
     class OrderChange:
         def __init__(self, change_timestamp, limit_change=0, price_change=0):
             self.timestamp = change_timestamp
@@ -20,12 +21,13 @@ class NiceHashOrder(ActiveOrderInfo):
         super().__init__(creation_timestamp=current_timestamp, order_id=order_id, limit=initial_limit,
                          price=initial_price, budget_left=0)
         self.changes = []
-        initial_change = NiceHashOrder.OrderChange(current_timestamp, limit_change=initial_limit,
-                                                   price_change=initial_price)
+        initial_change = SimulationActiveIOrderInfo.OrderChange(current_timestamp, limit_change=initial_limit,
+                                                                price_change=initial_price)
         self.changes.append(initial_change)
 
     def change(self, change_timestamp, limit_change=0, price_change=0):
-        new_change = NiceHashOrder.OrderChange(change_timestamp, limit_change=limit_change, price_change=price_change)
+        new_change = SimulationActiveIOrderInfo.OrderChange(change_timestamp, limit_change=limit_change,
+                                                            price_change=price_change)
         self.changes.append(new_change)
 
     def calculate_limit_at(self, timestamp):
@@ -47,6 +49,15 @@ class NiceHashOrder(ActiveOrderInfo):
             price_change += c.price_change
         return price_change
 
+    def calculate_budget_left_at(self, timestamp):
+        """
+        calculate the budget left in order based on the price up to the given timestamp
+        :param timestamp:
+        :return: the budget left in the order
+        """
+        # TODO
+        return super().get_budget_left()
+
     def get_limit(self):
         current_timestamp = get_clock().read_timestamp_of_now()
         return self.calculate_limit_at(current_timestamp)
@@ -54,6 +65,10 @@ class NiceHashOrder(ActiveOrderInfo):
     def get_price(self):
         current_timestamp = get_clock().read_timestamp_of_now()
         return self.calculate_price_at(current_timestamp)
+
+    def get_budget_left(self):
+        current_timestamp = get_clock().read_timestamp_of_now()
+        return self.calculate_budget_left_at(current_timestamp)
 
 
 class NiceHashSimulationDriver(NiceHashDriver):
@@ -67,8 +82,7 @@ class NiceHashSimulationDriver(NiceHashDriver):
         """
         # A map from order_id to its information object
         super().__init__()
-        self.orders = []
-        self.orders_mutex = Lock()
+        self.order_container = ThreadSafeDictionary()
 
     def perform_tick(self, up_to_timestamp):
         """
@@ -87,22 +101,19 @@ class NiceHashSimulationDriver(NiceHashDriver):
             pass
         logger('simulation/driver').info("House keeping before shutdown.")
 
-    def create_order(self, creation_timestamp, initial_limit, initial_price):
+    def create_order(self, creation_timestamp, initial_limit, initial_price, order_id=None):
         """
         Creates a new order with the given initial price and limit and returns the order id
         :param initial_price:
         :param initial_limit:
         :param creation_timestamp:
+        :param order_id: will be used if given (in the simulation mode)
         :return: ActiveOrderInfo object
         """
-        new_order_id = generate_order_id(creation_timestamp)
-        new_order = NiceHashOrder(creation_timestamp, new_order_id, initial_limit, initial_price)
-        self.orders_mutex.acquire()
-        try:
-            self.orders.append(new_order)
-            return new_order
-        finally:
-            self.orders_mutex.release()
+        new_order_id = generate_order_id(creation_timestamp) if order_id is None else order_id
+        new_order = SimulationActiveIOrderInfo(creation_timestamp, new_order_id, initial_limit, initial_price)
+        self.order_container.set(new_order_id, new_order)
+        return new_order
 
     def close_order(self, order_id):
         """
@@ -110,53 +121,33 @@ class NiceHashSimulationDriver(NiceHashDriver):
         :param order_id:
         :return: True if any matching order was found and False otherwise
         """
-        self.orders_mutex.acquire()
-        try:
-            found = False
-            new_order_list = []
-            for o in self.orders:
-                if order_id == o.order_id:
-                    found = True
-                    continue
-                new_order_list.append(o)
-            self.orders = new_order_list
-            return found
-        finally:
-            self.orders_mutex.release()
+        return self.order_container.unset(order_id)
 
     def get_orders(self, order_id=None):
         """
         Returns all orders or the one with the given order id (or None if not exists)
         :param order_id:
-        :return: and array of orders or a single order
+        :return: a dictionary of orders or a single order or None
         """
-        self.orders_mutex.acquire()
-        try:
-            if order_id is None:
-                orders = self.orders.copy()
-                return orders
-            else:
-                for o in self.orders:
-                    if order_id == o.order_id:
-                        return o.copy()
-                return None
-        finally:
-            self.orders_mutex.release()
+        if order_id is None:
+            return self.order_container.snapshot()
+        found, obj = self.order_container.get(order_id)
+        if found:
+            return obj
+        return None
 
     def change_order(self, timestamp, order_id, limit_change=0, price_change=0):
         """
         Applies the given change in limit or price in nicehash for the order with the given order id
         :return: True if any matching order found
         """
-        self.orders_mutex.acquire()
-        try:
-            for o in self.orders:
-                if order_id == o.order_id:
-                    o.change(change_timestamp=timestamp, limit_change=limit_change, price_change=price_change)
-                    return True
-            return False
-        finally:
-            self.orders_mutex.release()
+        return self.order_container.call_method_from_object(order_id,
+                                                            SimulationActiveIOrderInfo.change,
+                                                            {
+                                                                'change_timestamp': timestamp,
+                                                                'limit_change': limit_change,
+                                                                'price_change': price_change,
+                                                            })
 
 
 def generate_order_id(creation_timestamp):
