@@ -33,6 +33,7 @@ def custom_evaluation(value):
 class RuntimeMode(Enum):
     SIMULATION = 1
     REALTIME = 2
+    HEALTHCHECK = 3
 
 
 RUNTIME_MODE = evaluate_value("RuntimeMode." + config_raw_data['runtime_mode'])

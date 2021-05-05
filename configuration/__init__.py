@@ -8,6 +8,10 @@ def is_simulation():
     return RUNTIME_MODE == RuntimeMode.SIMULATION
 
 
+def is_healthcheck():
+    return RUNTIME_MODE == RuntimeMode.HEALTHCHECK
+
+
 def is_new_simulation_going_to_happen():
     return EXECUTION_CONFIGS.identifier is not None
 

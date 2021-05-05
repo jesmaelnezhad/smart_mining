@@ -18,6 +18,12 @@ class ActiveOrderInfo:
         self.budget_left = budget_left
         self.pool_id = pool_id
 
+    def get_creation_timestamp(self):
+        return self.creation_timestamp
+
+    def get_order_id(self):
+        return self.order_id
+
     def get_limit(self):
         return self.limit
 
@@ -86,6 +92,15 @@ class NiceHashDriver(TickPerformer):
         :return: True if any matching order was found and False otherwise
         """
         pass
+
+    def close_all_orders(self):
+        """
+        Closes all orders
+        :return:
+        """
+        orders = self.get_orders(order_id=None)
+        for o in orders:
+            self.close_order(order_id=o.get_order_id())
 
     def get_orders(self, order_id=None):
         """

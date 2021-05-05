@@ -28,7 +28,7 @@ import pytz
 
 from utility.datetime_helpers import datetime_string_to_timestamp
 
-output_file = open('/home/jamshid/PycharmProjects/smart-miner/files/csv_data/blocks.05.01.2021-12.01.2021.mine.csv', 'w')
+output_file = open('/home/jamshid/PycharmProjects/smart-miner/files/tmp/blocks.05.01.2021-12.01.2021.mine.csv', 'w')
 output_file.write("moment,id,pool_id\n");
 with open('/home/jamshid/PycharmProjects/smart-miner/files/tmp/blocks.mine.csv.raw') as f:
     lines = f.readlines()

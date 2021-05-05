@@ -1,10 +1,11 @@
-import random
 from time import sleep
+
+import requests
 
 from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
-from configuration import EXECUTION_CONFIGS
+from configuration import EXECUTION_CONFIGS, is_simulation
 from data_bank import get_database_handler
 from nicehash import get_nice_hash_driver
 from utility.log import logger
@@ -92,23 +93,28 @@ class Controller(TickPerformer):
             if should_stop():
                 break
             sleep(self.tick_duration)
+            # Unless it is a simulation, declare liveness to the healthcheck API
+            if not is_simulation():
+                # poke healthcheck API
+                self.poke_health_check()
+            # Do controller work
             current_timestamp = get_clock().read_timestamp_of_now()
             # Update the state of the controller
             # 1. update the latest block id and set the just_solved flag
             self.update_latest_block_id(current_timestamp=current_timestamp)
 
             # Make actions if needed
-            # CDF50 strategy
-            if self.cdf50_is_step_on:
-                # if on, turn off if too much time has passed (more than cdf 50)
-                if current_timestamp - self.latest_block_moment > EXECUTION_CONFIGS.controller_cdf50_order_lifespan_duration:
-                    self.order_turn_on_off(turn_on=False, current_timestamp=current_timestamp)
-            else:
-                # if off, turn on if a new block has arrived
-                if self.block_has_just_solved:
-                    self.order_turn_on_off(turn_on=True, current_timestamp=current_timestamp)
-
-            calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.controller_cdf50_order_lifespan_duration)
+            # # CDF50 strategy
+            # if self.cdf50_is_step_on:
+            #     # if on, turn off if too much time has passed (more than cdf 50)
+            #     if current_timestamp - self.latest_block_moment > EXECUTION_CONFIGS.controller_cdf50_order_lifespan_duration:
+            #         self.order_turn_on_off(turn_on=False, current_timestamp=current_timestamp)
+            # else:
+            #     # if off, turn on if a new block has arrived
+            #     if self.block_has_just_solved:
+            #         self.order_turn_on_off(turn_on=True, current_timestamp=current_timestamp)
+            #
+            # calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.controller_cdf50_order_lifespan_duration)
             logger('controller').debug("Updating controller at timestamp {0}.".format(current_timestamp))
             pass
         # Do house-keeping before termination
@@ -126,3 +132,18 @@ class Controller(TickPerformer):
 
     def is_a_daemon(self):
         return False
+
+    def poke_health_check(self):
+        health_check_url = "http://{0}:{1}".format(EXECUTION_CONFIGS.healthcheck_listen_address,
+                                                   EXECUTION_CONFIGS.healthcheck_listen_port)
+        try:
+            r = requests.get(health_check_url)
+            if r.status_code == '200':
+                logger("controller").warn(
+                    "Could not poke health check. This can result in all orders being closed because of health check panic.")
+            else:
+                logger("controller").debug("Poked health check successfully.")
+        except Exception as e:
+            logger("controller").warn(
+                "Could not poke health check. This can result in all orders being closed because of health check panic.")
+            logger("controller").error("Healthcheck poking error: {0}".format(e))

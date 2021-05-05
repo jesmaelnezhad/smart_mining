@@ -1,6 +1,21 @@
 from configuration import EXECUTION_CONFIGS
+from nicehash.driver import ActiveOrderInfo
 from nicehash.simulation_driver import NiceHashSimulationDriver
 from utility.log import logger
+from utility.thread_safe_containers import ThreadSafeDictionary
+
+
+class RealtimeActiveOrderInfo(ActiveOrderInfo):
+    def __init__(self, order_details_json):
+        """
+        A json such as this: https://www.nicehash.com/docs/rest/post-main-api-v2-hashpower-order
+        :param order_details_json: the full json information of the order as Nicehash API returns
+        """
+        # TODO call super constructor using the data extracted from the given json
+        self.order_details_json = order_details_json
+
+    def get_full_details_json(self):
+        return self.order_details_json
 
 
 class NiceHashRealtimeDriver(NiceHashSimulationDriver):
@@ -13,6 +28,12 @@ class NiceHashRealtimeDriver(NiceHashSimulationDriver):
         A singleton class that is the driver of nicehash
         """
         super().__init__()
+        # initialize order information cache
+        self.active_orders = ThreadSafeDictionary()
+        # load orders using NiceHashAPI
+        orders = self.get_orders(order_id=None)
+        for o in orders:
+            self.active_orders.set(o.get_order_id(), o)
 
     def perform_tick(self, up_to_timestamp):
         """
@@ -62,7 +83,7 @@ class NiceHashRealtimeDriver(NiceHashSimulationDriver):
         """
         simulation_orders_snapshot = super().get_orders(order_id=order_id)
         # TODO also get a snapshot of the real orders
-        pass
+        return {}
 
     def change_order(self, timestamp, order_id, limit_change=0, price_change=0):
         """

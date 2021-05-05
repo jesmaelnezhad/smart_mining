@@ -3,7 +3,9 @@ import traceback
 from time import sleep
 
 from clock import get_clock
-from configuration import EXECUTION_CONFIGS, is_simulation
+from configuration import EXECUTION_CONFIGS, is_simulation, is_healthcheck
+from healthcheck import get_health_check_watcher
+from healthcheck.server import start_healthcheck_server
 from learner import get_learner
 from nicehash import get_nice_hash_driver
 from simulation_evaluator import get_simulation_evaluator
@@ -46,42 +48,49 @@ if __name__ == '__main__':
         TICK_PERFORMERS.append(clock)
         log.logger('main').info('Clock started.')
 
-        # start the mine database updater
-        mine_database_updater = get_database_updater()
-        mine_database_updater.start()
-        TICK_PERFORMERS.append(mine_database_updater)
-        log.logger('main').info('Mine database updater started.')
-
-        if is_simulation():
-            # start the simulation database updater
-            simulation_database_updater = get_simulation_database_updater()
-            simulation_database_updater.start()
-            TICK_PERFORMERS.append(simulation_database_updater)
-            log.logger('main').info('Simulation database updater started.')
-
-        # start the controller
-        CONTROLLER = get_controller()
-        CONTROLLER.start()
-        TICK_PERFORMERS.append(CONTROLLER)
-        log.logger('main').info('Controller started.')
-
-        # start the analyzer
-        analyzer = get_analyzer()
-        analyzer.start()
-        TICK_PERFORMERS.append(analyzer)
-        log.logger('main').info('Analyzer started.')
-
-        # start the learner
-        learner = get_learner()
-        learner.start()
-        TICK_PERFORMERS.append(learner)
-        log.logger('main').info('Learner started.')
-
         # start the nice hash driver
         nice_hash = get_nice_hash_driver()
         nice_hash.start()
         TICK_PERFORMERS.append(nice_hash)
         log.logger('main').info('Nice hash driver started.')
+
+        if is_healthcheck():
+            # start healthcheck watcher
+            health_check_watcher = get_health_check_watcher()
+            health_check_watcher.start()
+            TICK_PERFORMERS.append(health_check_watcher)
+            log.logger('main').info('Health check watcher started.')
+        else:
+            # start the mine database updater
+            mine_database_updater = get_database_updater()
+            mine_database_updater.start()
+            TICK_PERFORMERS.append(mine_database_updater)
+            log.logger('main').info('Mine database updater started.')
+
+            if is_simulation():
+                # start the simulation database updater
+                simulation_database_updater = get_simulation_database_updater()
+                simulation_database_updater.start()
+                TICK_PERFORMERS.append(simulation_database_updater)
+                log.logger('main').info('Simulation database updater started.')
+
+            # start the controller
+            CONTROLLER = get_controller()
+            CONTROLLER.start()
+            TICK_PERFORMERS.append(CONTROLLER)
+            log.logger('main').info('Controller started.')
+
+            # start the analyzer
+            analyzer = get_analyzer()
+            analyzer.start()
+            TICK_PERFORMERS.append(analyzer)
+            log.logger('main').info('Analyzer started.')
+
+            # start the learner
+            learner = get_learner()
+            learner.start()
+            TICK_PERFORMERS.append(learner)
+            log.logger('main').info('Learner started.')
 
         if is_simulation():
             # start the simulation evaluator
@@ -91,6 +100,10 @@ if __name__ == '__main__':
             log.logger('main').info('Simulation evaluator started.')
             while not simulation_evaluator.should_end_execution():
                 sleep(1)
+            graceful_termination()
+        elif is_healthcheck():
+            # start the liveness decalation API
+            start_healthcheck_server()
             graceful_termination()
         else:
             join_tick_performers()
