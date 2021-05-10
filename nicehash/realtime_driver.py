@@ -1,5 +1,5 @@
 from configuration import EXECUTION_CONFIGS
-from nicehash.driver import ActiveOrderInfo
+from data_bank.model import ActiveOrderInfo
 from nicehash.simulation_driver import NiceHashSimulationDriver
 from utility.log import logger
 from utility.thread_safe_containers import ThreadSafeDictionary
@@ -14,7 +14,7 @@ class RealtimeActiveOrderInfo(ActiveOrderInfo):
         # TODO call super constructor using the data extracted from the given json
         self.order_details_json = order_details_json
 
-    def get_full_details_json(self):
+    def get_full_json_details(self):
         return self.order_details_json
 
 

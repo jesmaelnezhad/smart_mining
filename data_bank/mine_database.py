@@ -1,4 +1,5 @@
 import datetime
+import enum
 import time
 import random
 
@@ -63,6 +64,8 @@ class MineDatabaseUpdater(DatabaseUpdater):
 
         # Start day by day from the beginning
         while beg_dt <= now_dt:
+            if self.should_stop():
+                break
             self.update_blocks_at_date(year=beg_dt.year, month=beg_dt.month, day=beg_dt.day)
             beg_dt += datetime.timedelta(days=1)
 
@@ -74,11 +77,15 @@ class MineDatabaseUpdater(DatabaseUpdater):
         time.sleep(5.0)
         factor = 1
         while response.status_code != 200:
+            if self.should_stop():
+                break
             print(response.status_code)
             time.sleep(DATA_FETCH_API_INTER_DELAY * factor)
             response = requests.get(url)
             factor = min(factor * 2, 4)
         data_list = response.json()['data']
+        if self.should_stop():
+            return
         if data_list is None:
             return
         for block in data_list:

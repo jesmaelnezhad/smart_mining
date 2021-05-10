@@ -12,8 +12,8 @@ from simulation_evaluator import get_simulation_evaluator
 from utility import log
 from analyzer import get_analyzer
 from controller import get_controller
-from data_bank import get_database_handler, get_database_updater, get_simulation_database_updater
-
+from data_bank import get_database_handler, get_database_updater, get_simulation_database_updater, \
+    get_orders_database_updater
 
 TICK_PERFORMERS = []
 CONTROLLER = None
@@ -66,6 +66,12 @@ if __name__ == '__main__':
             mine_database_updater.start()
             TICK_PERFORMERS.append(mine_database_updater)
             log.logger('main').info('Mine database updater started.')
+
+            # start the orders database updater
+            orders_database_updater = get_orders_database_updater()
+            orders_database_updater.start()
+            TICK_PERFORMERS.append(orders_database_updater)
+            log.logger('main').info('Orders database updater started.')
 
             if is_simulation():
                 # start the simulation database updater

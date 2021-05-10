@@ -5,7 +5,8 @@ import math
 from clock import get_clock
 from configuration import EXECUTION_CONFIGS
 from configuration.constants import NICE_HASH_LIMIT_CHANGE_PER_SECOND
-from nicehash.driver import NiceHashDriver, ActiveOrderInfo
+from nicehash.driver import NiceHashDriver
+from data_bank.model import ActiveOrderInfo
 from utility.log import logger
 from utility.thread_safe_containers import ThreadSafeDictionary
 
