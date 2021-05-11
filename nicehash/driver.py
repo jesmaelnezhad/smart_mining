@@ -89,13 +89,3 @@ class NiceHashDriver(TickPerformer):
         :return: True if any matching order found
         """
         pass
-
-# 01:11 came to laptop to start work on the smart miner
-# 01:44
-# 02:11
-# 02:44
-# 02:52 after implementing virtual order controller without extra apis
-# 03:11
-# 03:13
-# 03:53
-# 03:55
