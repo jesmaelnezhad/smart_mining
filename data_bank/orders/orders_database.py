@@ -4,6 +4,7 @@ from configuration.constants import SLUSHPOOL_ID, SLUSHPOOL_ID_NICEHASH
 from data_bank.database import DatabaseHandler, DatabaseUpdater, DatabaseException
 from data_bank.model import NiceHashActiveOrderMarket, NiceHashActiveOrderType, NiceHashActiveOrderAlgorithm
 from nicehash import get_nice_hash_driver
+from utility.datetime_helpers import timestamp_to_datetime_string
 from utility.log import logger
 
 
@@ -73,6 +74,7 @@ class OrdersDatabaseHandler(DatabaseHandler):
     def get_orders(self, order_id=None, active_orders_instead=False, existing_orders_only=True):
         """
         Returns all orders.
+        :param existing_orders_only: return only those orders whose exist column is 1
         :parameter order_id: if None, all orders are returned, if not None, only that order is fetched.
         :parameter active_orders_instead returns active orders if True. Default to False
         :return: A list of lists. Each tuple consists of (creation_timestamp, update_timestamp, order_id, market,
@@ -87,6 +89,22 @@ class OrdersDatabaseHandler(DatabaseHandler):
             sql_query += " AND exist = 1;"
         orders = self.execute_select(select_sql_query=sql_query)
         return orders
+
+    def get_orders_price_and_limit_and_amount(self, order_id=None, active_orders_instead=False,
+                                              existing_orders_only=True):
+        """
+        Returns the price, limit, and amount orders.
+        :param existing_orders_only: return only those orders whose exist column is 1
+        :parameter order_id: if None, all orders are returned, if not None, only that order is fetched.
+        :parameter active_orders_instead returns active orders if True. Default to False
+        :return: A list of lists. Each tuple consists of (price, power_limit, amount). This list contains one tuple if order_id is passed, and
+        none if order_id is passed and no such order exists.
+        """
+        orders = self.get_orders(order_id=order_id, active_orders_instead=active_orders_instead,
+                                 existing_orders_only=existing_orders_only)
+        if orders is None or len(orders) == 0:
+            return orders
+        return [(r[6], r[7], r[8],) for r in orders]
 
     def delete_all_orders_except(self, order_ids=None, delete_active_orders_instead=False):
         """
@@ -201,3 +219,24 @@ class OrdersDatabaseHandler(DatabaseHandler):
         except DatabaseException:
             logger('mine-database/orders').error(
                 "Error: inserting active order with id {0}".format(order_id))
+
+    def get_latest_active_order_update(self, up_to_timestamp):
+        """
+        Returns the info of the latest active order update prior to up_to_timestamp.
+        :param up_to_timestamp:
+        :return: tuple (update_timestamp, order_id, price, power_limit, amount, full_details_json_serialized) or None if
+         no updates found with the given criterion
+        """
+        sql_query = """SELECT (update_timestamp, order_id, price, power_limit, amount, full_details_json_serialized) 
+        FROM {1} ORDER BY update_timestamp DESC WHERE update_timestamp < to_timestamp({0}) LIMIT 1;""".format(
+            up_to_timestamp,
+            self.ACTIVE_ORDERS_TABLE_NAME
+        )
+        try:
+            self.execute_write(write_sql_query=sql_query)
+            order_results = self.execute_select(select_sql_query=sql_query)
+            return None if len(order_results) == 0 else order_results[0]
+        except DatabaseException:
+            logger('mine-database/orders').error(
+                "Error: fetching active order update prior to {0}".format(
+                    timestamp_to_datetime_string(up_to_timestamp)))

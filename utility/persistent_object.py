@@ -1,7 +1,5 @@
 import json
 
-from data_bank import get_orders_database_handler
-
 
 class PersistentObject:
     OWNER_KEY = "owner"
@@ -28,13 +26,11 @@ class PersistentObject:
     def __str__(self):
         return self.json().__str__()
 
-    def save_in_db(self):
-        orders_db = get_orders_database_handler()
-        orders_db.key_value_put(self[self.OWNER_KEY], self[self.ID_KEY], self.__str__())
+    def save_in_db(self, db):
+        db.key_value_put(self[self.OWNER_KEY], self[self.ID_KEY], self.__str__())
 
-    def load_from_db(self):
-        orders_db = get_orders_database_handler()
-        json_str = orders_db.key_value_get(self.owner, self.strategy_execution_id)
+    def load_from_db(self, db):
+        json_str = db.key_value_get(self.owner, self.strategy_execution_id)
         self.__dict__ = json.loads(json_str)
         self.recast_attr_types_after_load()
 

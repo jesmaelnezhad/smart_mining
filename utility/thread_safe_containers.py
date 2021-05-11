@@ -15,9 +15,17 @@ class ThreadSafeDictionary:
         self.objects_mutex.acquire()
         try:
             result = dict()
-            for k,v in self.objects.items():
+            for k, v in self.objects.items():
                 result[k] = copy.deepcopy(self.objects[k])
             return result
+        finally:
+            self.objects_mutex.release()
+
+    def bulk_insert(self, data_dictionary):
+        self.objects_mutex.acquire()
+        try:
+            for k, v in data_dictionary.items():
+                self.objects[k] = v
         finally:
             self.objects_mutex.release()
 
@@ -62,5 +70,17 @@ class ThreadSafeDictionary:
                 func(self.objects[key], **args)
                 return True
             return False
+        finally:
+            self.objects_mutex.release()
+
+    def clear_by_predicate(self, predicate_function, args):
+        self.objects_mutex.acquire()
+        try:
+            to_keep = dict()
+            for k, v in self.objects.items():
+                if predicate_function(v, **args):
+                    to_keep[k] = v
+            self.objects.clear()
+            self.objects = to_keep
         finally:
             self.objects_mutex.release()

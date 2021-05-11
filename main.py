@@ -4,16 +4,17 @@ from time import sleep
 
 from clock import get_clock
 from configuration import EXECUTION_CONFIGS, is_simulation, is_healthcheck
+from data_bank import get_database_updater, get_simulation_database_updater
+from data_bank.orders import get_orders_database_updater, get_virtual_orders_updater
 from healthcheck import get_health_check_watcher
 from healthcheck.server import start_healthcheck_server
 from learner import get_learner
 from nicehash import get_nice_hash_driver
+from nicehash.vitual_order_request_applier import get_request_applier
 from simulation_evaluator import get_simulation_evaluator
 from utility import log
 from analyzer import get_analyzer
 from controller import get_controller
-from data_bank import get_database_handler, get_database_updater, get_simulation_database_updater, \
-    get_orders_database_updater
 
 TICK_PERFORMERS = []
 CONTROLLER = None
@@ -72,6 +73,18 @@ if __name__ == '__main__':
             orders_database_updater.start()
             TICK_PERFORMERS.append(orders_database_updater)
             log.logger('main').info('Orders database updater started.')
+
+            # start the virtual orders updater
+            virtual_orders_updater = get_virtual_orders_updater()
+            virtual_orders_updater.start()
+            TICK_PERFORMERS.append(virtual_orders_updater)
+            log.logger('main').info('Virtual orders updater started.')
+
+            # start the virtual order request applier
+            request_applier = get_request_applier()
+            request_applier.start()
+            TICK_PERFORMERS.append(request_applier)
+            log.logger('main').info('Virtual orders request applier started.')
 
             if is_simulation():
                 # start the simulation database updater
