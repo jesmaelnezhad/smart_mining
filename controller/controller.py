@@ -6,10 +6,13 @@ from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS, is_simulation
+from controller.strategy import StrategyStateMachine
 from data_bank import get_database_handler
 from nicehash import get_nice_hash_driver
 from utility.log import logger
 
+
+## TODO change controller to work with a table in the database and 'schedule' active strategies
 
 class Controller(TickPerformer):
     def __init__(self):
@@ -89,6 +92,7 @@ class Controller(TickPerformer):
                 self.block_has_just_solved = True
 
     def run(self, should_stop):
+
         while True:
             if should_stop():
                 break
