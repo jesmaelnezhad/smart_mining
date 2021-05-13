@@ -5,6 +5,7 @@ nicehash/__pycache__/*
 */__pycache__/*
 vagrant/.vagrant
 files/csv_data
+files/tmp
 files/config.yaml
 .idea/inspectionProfiles/profiles_settings.xml
 .idea/misc.xml
