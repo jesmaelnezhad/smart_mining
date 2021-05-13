@@ -3,6 +3,15 @@ configuration/__pycache__/__init__.cpython-36.pyc
 data_bank/__pycache__/*
 nicehash/__pycache__/*
 */__pycache__/*
+.idea/
+__pycache__/
+controller/scheduler/__pycache__/
+data_bank/orders/__pycache__/
+files/code_samples/database.db
+files/dynamic_strategies/__pycache__/
+files/simulations
+nicehash/vitual_order_request_applier/__pycache__/
+venv/
 vagrant/.vagrant
 files/csv_data
 files/tmp

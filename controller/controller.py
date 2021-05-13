@@ -1,3 +1,4 @@
+import json
 from time import sleep
 
 import requests
@@ -6,7 +7,7 @@ from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS, is_simulation
-from controller.strategy import StrategyStateMachine
+from controller.scheduler.ssr import SSRLoader
 from data_bank import get_database_handler
 from nicehash import get_nice_hash_driver
 from utility.log import logger
@@ -92,6 +93,11 @@ class Controller(TickPerformer):
                 self.block_has_just_solved = True
 
     def run(self, should_stop):
+
+        loader = SSRLoader()
+
+        ssr = loader.load_ssr_by_name("strategy1")
+        logger("ssr").info(json.dumps(ssr.get_dict()))
 
         while True:
             if should_stop():

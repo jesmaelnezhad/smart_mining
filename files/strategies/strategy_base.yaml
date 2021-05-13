@@ -2,7 +2,7 @@ ssr:
   abstract: True
   name: 'base_strategy'
   base_name: ''
-  package: ''
+  package: 'default package'
   lifecycle:
     start:
       - 'ts_after/0' # to start as soon as scheduler can

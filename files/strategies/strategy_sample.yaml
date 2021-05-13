@@ -1,0 +1,30 @@
+ssr:
+  abstract: False
+  name: 'strategy1'
+  base_name: 'base_strategy'
+  package: 'strategy1 package'
+#  lifecycle:
+#    start:
+#      - 'ts_after/0' # to start as soon as scheduler can
+#      - 'ts_after/4252363532' # to start after timestamp 4252363532
+##      - 'ts_in/234242442,423424234' # to start at any timestamp in the interval [234242442,423424234]
+##      - 'block_any' # to start when any block is solved
+##      - 'block_in/535321,43535321' # to start when any block with duration in [535321,43535321] is solved
+#    end:
+##      - 'ts/3242342532' # to close if current timestamp is passed 3242342532
+##      - 'after_time/21312' # to close after 21312 seconds since the start
+#      - 'after_blocks/32' # to close when 32 blocks have solved since the start
+#      - 'self_determined'
+#    execution:
+#      parallel: False
+#      repeat: False
+#  triggers:
+#    - 'time_periodic/300' # to call reconcile every 300 seconds
+##    - 'dynamic_pins' # to call reconcile at every timestamp that is 'pinned' before
+##    - 'new_block' # when a new block has arrived
+##    - 'analyzer/foo_bar' # when trigger 'foo_bar' is fired in the analyzer
+##    - 'learner/foo_bar' # when trigger 'foo_bar' is fired in the learner
+  order:
+#    physical_order_id: 'any_available'
+#    physical_order_id: 'any_fixed'
+    physical_order_id: 'id/31312-4213-43242-42342356356456-45345345-53'
