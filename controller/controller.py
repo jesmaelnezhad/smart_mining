@@ -9,20 +9,20 @@ from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS, is_simulation
 from controller.scheduler.ssr import SSRLoader
 from data_bank import get_database_handler
-from nicehash import get_nice_hash_driver
 from utility.log import logger
 
 
 ## TODO change controller to work with a table in the database and 'schedule' active strategies
 
 class Controller(TickPerformer):
-    def __init__(self):
+    TEMPORARY_ORDER_ID = "13131-43524dsfse-f23edfw4rfs-rfer-w4rt5ystet-w34tw3r3"
+    def __init__(self, scope_identifier):
         """
         A singleton class that is the controller
         """
         super().__init__()
         self.tick_duration = calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.controller_sleep_duration)
-        self.nice_hash_driver = get_nice_hash_driver()
+        self.scope_identifier = scope_identifier
         current_timestamp = get_clock().read_timestamp_of_now()
         self.active_order = None
         self.init_active_order_info(current_timestamp)
@@ -32,13 +32,16 @@ class Controller(TickPerformer):
         self.update_latest_block_id(current_timestamp)
         self.cdf50_is_step_on = False
 
+    def get_nice_hash_driver(self):
+        return self.scope_identifier.get_nice_hash_driver()
+
     def init_active_order_info(self, current_timestamp):
         """
         Creates the ActiveOrderInfo object either from the real order that's returned from nicehash API, or from scratch
         in the case of simulation.
         :return: An ActiveOrderInfo object that represents the order being used by the controller
         """
-        orders = self.nice_hash_driver.get_orders(order_id=None)
+        orders = self.get_nice_hash_driver().get_orders(order_id=None)
         if len(orders) > 1:
             logger("controller/init_order").warn("Having more than one order!!!")
             logger("controller/init_order").warn("Orders: {0}", "\n".join(orders))
@@ -51,8 +54,10 @@ class Controller(TickPerformer):
             # FIXME the initial budget_left value also may need to be given
             limit = EXECUTION_CONFIGS.controller_cdf50_power_off_limit
             price = EXECUTION_CONFIGS.controller_cdf50_power_off_price
-            self.active_order = self.nice_hash_driver.create_order(creation_timestamp=current_timestamp,
-                                                                   initial_limit=limit, initial_price=price)
+            self.active_order = self.get_nice_hash_driver().create_order(
+                creation_timestamp=current_timestamp, order_id=self.TEMPORARY_ORDER_ID,
+                price=price, speed_limit=limit, amount=None,
+                exists=True)
 
     def order_turn_on_off(self, turn_on, current_timestamp):
         """
@@ -63,14 +68,15 @@ class Controller(TickPerformer):
         limit_step = EXECUTION_CONFIGS.controller_cdf50_power_limit_step
         price_step = EXECUTION_CONFIGS.controller_cdf50_power_price_step
         if turn_on:
-            self.nice_hash_driver.change_order(timestamp=current_timestamp,
-                                               order_id=self.active_order.order_id,
-                                               limit_change=limit_step, price_change=price_step)
+            self.get_nice_hash_driver().update_order_price_and_limit(timestamp=current_timestamp,
+                                                                     order_id=self.active_order.order_id,
+                                                                     limit_change=limit_step, price_change=price_step)
             self.cdf50_is_step_on = True
         else:
-            self.nice_hash_driver.change_order(timestamp=current_timestamp,
-                                               order_id=self.active_order.order_id,
-                                               limit_change=-1 * limit_step, price_change=-1 * price_step)
+            self.get_nice_hash_driver().update_order_price_and_limit(timestamp=current_timestamp,
+                                                                     order_id=self.active_order.order_id,
+                                                                     limit_change=-1 * limit_step,
+                                                                     price_change=-1 * price_step)
             self.cdf50_is_step_on = False
 
     def update_latest_block_id(self, current_timestamp):

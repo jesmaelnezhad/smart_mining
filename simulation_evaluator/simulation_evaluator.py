@@ -7,15 +7,14 @@ from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS, is_new_simulation_going_to_happen
-from data_bank import get_database_handler, get_simulation_database_handler
-from nicehash import get_nice_hash_driver
+from data_bank import get_simulation_database_handler
 from utility.log import logger
 
 
 class SimulationEvaluator(TickPerformer):
     SIMULATION_PROOF_NAME_EXTENSION = '.simulation'
 
-    def __init__(self):
+    def __init__(self, scope_identifier):
         """
         A singleton class that is the simulation evaluator
         """
@@ -23,8 +22,11 @@ class SimulationEvaluator(TickPerformer):
         self.tick_duration = calculate_tick_duration_from_sleep_duration(
             EXECUTION_CONFIGS.simulation_evaluator_sleep_duration)
         self.simulation_db_handler = get_simulation_database_handler()
-        self.simulation_driver = get_nice_hash_driver()
+        self.scope_identifier = scope_identifier
         self.current_simulation_identifier = EXECUTION_CONFIGS.identifier
+
+    def get_nice_hash_driver(self):
+        return self.scope_identifier.get_nice_hash_friver()
 
     def run(self, should_stop):
         # prepare the simulation database at the beginning of the evaluation

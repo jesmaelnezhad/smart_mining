@@ -5,12 +5,11 @@ from time import sleep
 from clock import get_clock
 from configuration import EXECUTION_CONFIGS, is_simulation, is_healthcheck
 from data_bank import get_database_updater, get_simulation_database_updater
-from data_bank.orders import get_orders_database_updater, get_virtual_orders_updater
+from data_bank.orders import get_orders_database_updater, get_virtual_orders_updater, get_simulation_scope_identifier
 from healthcheck import get_health_check_watcher
 from healthcheck.server import start_healthcheck_server
 from learner import get_learner
-from nicehash import get_nice_hash_driver
-from nicehash.vitual_order_request_applier import get_request_applier
+from data_bank.orders.vitual_order_request_applier import get_request_applier
 from simulation_evaluator import get_simulation_evaluator
 from utility import log
 from analyzer import get_analyzer
@@ -49,11 +48,11 @@ if __name__ == '__main__':
         TICK_PERFORMERS.append(clock)
         log.logger('main').info('Clock started.')
 
-        # start the nice hash driver
-        nice_hash = get_nice_hash_driver()
-        nice_hash.start()
-        TICK_PERFORMERS.append(nice_hash)
-        log.logger('main').info('Nice hash driver started.')
+        # # start the nice hash driver
+        # nice_hash = get_nice_hash_driver()
+        # nice_hash.start()
+        # TICK_PERFORMERS.append(nice_hash)
+        # log.logger('main').info('Nice hash driver started.')
 
         if is_healthcheck():
             # start healthcheck watcher
@@ -68,20 +67,22 @@ if __name__ == '__main__':
             TICK_PERFORMERS.append(mine_database_updater)
             log.logger('main').info('Mine database updater started.')
 
+            scope_simulation_identifier = get_simulation_scope_identifier()
+
             # start the orders database updater
-            orders_database_updater = get_orders_database_updater()
+            orders_database_updater = get_orders_database_updater(scope_simulation_identifier)
             orders_database_updater.start()
             TICK_PERFORMERS.append(orders_database_updater)
             log.logger('main').info('Orders database updater started.')
 
             # start the virtual orders updater
-            virtual_orders_updater = get_virtual_orders_updater()
+            virtual_orders_updater = get_virtual_orders_updater(scope_simulation_identifier)
             virtual_orders_updater.start()
             TICK_PERFORMERS.append(virtual_orders_updater)
             log.logger('main').info('Virtual orders updater started.')
 
             # start the virtual order request applier
-            request_applier = get_request_applier()
+            request_applier = get_request_applier(scope_identifier=scope_simulation_identifier)
             request_applier.start()
             TICK_PERFORMERS.append(request_applier)
             log.logger('main').info('Virtual orders request applier started.')
@@ -94,7 +95,7 @@ if __name__ == '__main__':
                 log.logger('main').info('Simulation database updater started.')
 
             # start the controller
-            CONTROLLER = get_controller()
+            CONTROLLER = get_controller(scope_identifier=scope_simulation_identifier)
             CONTROLLER.start()
             TICK_PERFORMERS.append(CONTROLLER)
             log.logger('main').info('Controller started.')

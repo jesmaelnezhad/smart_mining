@@ -1,12 +1,10 @@
 from threading import Lock
 from time import sleep
 
-from future.backports.http.server import BaseHTTPRequestHandler
-
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS
-from nicehash import get_nice_hash_driver
+from data_bank.orders import get_realtime_scope_identifier
 from utility.log import logger
 
 
@@ -20,7 +18,7 @@ class HealthCheckWatcher(TickPerformer):
             EXECUTION_CONFIGS.healthcheck_watcher_sleep_duration)
         self.silent_cycles_threshold = calculate_tick_duration_from_sleep_duration(
             EXECUTION_CONFIGS.healthcheck_watcher_silent_cycles_threshold)
-        self.nice_hash_driver = get_nice_hash_driver()
+        self.nice_hash_driver = get_realtime_scope_identifier()
         self.silent_cycles_count = 0
         self.silent_cycles_count_mutex = Lock()
 

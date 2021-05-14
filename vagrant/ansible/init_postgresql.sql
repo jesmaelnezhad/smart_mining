@@ -21,7 +21,21 @@ CREATE TABLE key_values (owner character(100), key character(500), value TEXT, C
 /* TODO add maybe constant for pool_id */
 CREATE TYPE nicehash_order_market AS ENUM ('EU','USA','EU_N','USA_E');
 CREATE TYPE nicehash_order_algorithm AS ENUM ('SHA250');
-CREATE TYPE nicehash_order_type AS ENUM ('standart', 'fixed');
-CREATE TABLE orders (creation_timestamp timestamptz NOT NULL, order_id character(200) PRIMARY KEY NOT NULL, market nicehash_order_market NOT NULL, type nicehash_order_type NOT NULL, algorithm nicehash_order_algorithm NOT NULL, pool_id character(100) NOT NULL, exist BIT NOT NULL);
-CREATE TABLE active_orders (order_id character(200) NOT NULL, update_timestamp timestamptz NOT NULL, price DOUBLE PRECISION NOT NULL, power_limit DOUBLE PRECISION NOT NULL, amount DOUBLE PRECISION NOT NULL, full_details_json_serialized TEXT);
-CREATE TABLE key_values (owner character(100), key character(500), value TEXT, CONSTRAINT owner_key_unique UNIQUE(owner, key));
+CREATE TYPE nicehash_order_type AS ENUM ('standard', 'fixed');
+CREATE TABLE IF NOT EXISTS orders (
+creation_timestamp timestamptz NOT NULL,
+order_id character(200) PRIMARY KEY NOT NULL,
+price DOUBLE PRECISION NOT NULL,
+speed_limit DOUBLE PRECISION NOT NULL,
+amount DOUBLE PRECISION NOT NULL,
+market nicehash_order_market NOT NULL,
+order_type nicehash_order_type NOT NULL,
+algorithm nicehash_order_algorithm NOT NULL,
+pool_id character(100) NOT NULL, exist BIT NOT NULL);
+CREATE TABLE IF NOT EXISTS stats_order (update_timestamp timestamptz NOT NULL, order_id character(200) NOT NULL, is_order_alive BIT NOT NULL,
+accepted_speed DOUBLE PRECISION, rejected_speed_share_above_target DOUBLE PRECISION, rejected_speed_stale_shares DOUBLE PRECISION,
+rejected_speed_duplicate_shares DOUBLE PRECISION, rejected_speed_invalid_ntime DOUBLE PRECISION, rejected_speed_other_reason DOUBLE PRECISION,
+rejected_speed_unknown_worker DOUBLE PRECISION, rejected_speed_response_timeout DOUBLE PRECISION, speed_limit DOUBLE PRECISION NOT NULL,
+rewarded_speed DOUBLE PRECISION NOT NULL, paying_speed DOUBLE PRECISION NOT NULL, rejected_speed DOUBLE PRECISION NOT NULL,
+paid_amount DOUBLE PRECISION NOT NULL, price DOUBLE PRECISION NOT NULL, full_details_json_serialized TEXT full_details_json_serialized TEXT);
+CREATE TABLE IF NOT EXISTS key_values (owner character(100), key character(500), value TEXT, CONSTRAINT owner_key_unique UNIQUE(owner, key));

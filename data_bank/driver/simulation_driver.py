@@ -1,17 +1,16 @@
-from threading import Lock
-
 import math
 
 from clock import get_clock
 from configuration import EXECUTION_CONFIGS
-from configuration.constants import NICE_HASH_LIMIT_CHANGE_PER_SECOND
-from nicehash.driver import NiceHashDriver
-from data_bank.model import ActiveOrderInfo
+from configuration.constants import NICE_HASH_LIMIT_CHANGE_PER_SECOND, SLUSHPOOL_ID_NICEHASH
+from data_bank.driver.driver import NiceHashDriver
+from data_bank.model import ActiveOrderInfo, NiceHashActiveOrderMarket, NiceHashActiveOrderType, \
+    NiceHashActiveOrderAlgorithm
 from utility.log import logger
 from utility.thread_safe_containers import ThreadSafeDictionary
 
 
-class SimulationActiveIOrderInfo(ActiveOrderInfo):
+class SimulationActiveOrderInfo(ActiveOrderInfo):
     class OrderChange:
         def __init__(self, change_timestamp, limit_change=0, price_change=0):
             self.timestamp = change_timestamp
@@ -22,13 +21,13 @@ class SimulationActiveIOrderInfo(ActiveOrderInfo):
         super().__init__(creation_timestamp=current_timestamp, order_id=order_id, limit=initial_limit,
                          price=initial_price, budget_left=0)
         self.changes = []
-        initial_change = SimulationActiveIOrderInfo.OrderChange(current_timestamp, limit_change=initial_limit,
-                                                                price_change=initial_price)
+        initial_change = SimulationActiveOrderInfo.OrderChange(current_timestamp, limit_change=initial_limit,
+                                                               price_change=initial_price)
         self.changes.append(initial_change)
 
     def change(self, change_timestamp, limit_change=0, price_change=0):
-        new_change = SimulationActiveIOrderInfo.OrderChange(change_timestamp, limit_change=limit_change,
-                                                            price_change=price_change)
+        new_change = SimulationActiveOrderInfo.OrderChange(change_timestamp, limit_change=limit_change,
+                                                           price_change=price_change)
         self.changes.append(new_change)
 
     def calculate_limit_at(self, timestamp):
@@ -85,34 +84,29 @@ class NiceHashSimulationDriver(NiceHashDriver):
         super().__init__()
         self.order_container = ThreadSafeDictionary()
 
-    def perform_tick(self, up_to_timestamp):
-        """
-        Performs one tick.
-        :return: None
-        """
-        logger('simulation/driver').debug("Performing a tick at timestamp {0}.".format(up_to_timestamp))
-
-    def pre_exit_house_keeping(self):
-        """
-        This function is called before the thread stops and is useful for closing orders if the robot is going down
-        :return: None
-        """
-        if EXECUTION_CONFIGS.nice_hash_close_orders_before_shutdown:
-            # Not needed in simulation because no more records from these records will be written
-            pass
-        logger('simulation/driver').info("House keeping before shutdown.")
-
-    def create_order(self, creation_timestamp, initial_limit, initial_price, order_id=None):
+    def create_order(self, creation_timestamp, order_id,
+                     price, speed_limit, amount,
+                     market=NiceHashActiveOrderMarket.EU,
+                     order_type=NiceHashActiveOrderType.STANDARD,
+                     algorithm=NiceHashActiveOrderAlgorithm.SHA250,
+                     pool_id=SLUSHPOOL_ID_NICEHASH,
+                     exists=True):
         """
         Creates a new order with the given initial price and limit and returns the order id
-        :param initial_price:
-        :param initial_limit:
+        :param exists:
+        :param amount:
+        :param price:
+        :param speed_limit:
         :param creation_timestamp:
+        :param pool_id:
+        :param market:
+        :param order_type:
+        :param algorithm:
         :param order_id: will be used if given (in the simulation mode)
         :return: ActiveOrderInfo object
         """
         new_order_id = generate_order_id(creation_timestamp) if order_id is None else order_id
-        new_order = SimulationActiveIOrderInfo(creation_timestamp, new_order_id, initial_limit, initial_price)
+        new_order = SimulationActiveOrderInfo(creation_timestamp, new_order_id, speed_limit, price)
         self.order_container.set(new_order_id, new_order)
         return new_order
 
@@ -137,18 +131,48 @@ class NiceHashSimulationDriver(NiceHashDriver):
             return obj
         return None
 
-    def change_order(self, timestamp, order_id, limit_change=0, price_change=0):
+    def update_order_price_and_limit(self, timestamp, order_id, limit, price, display_market_factor=None, market_factor=None):
         """
         Applies the given change in limit or price in nicehash for the order with the given order id
         :return: True if any matching order found
         """
         return self.order_container.call_method_from_object(order_id,
-                                                            SimulationActiveIOrderInfo.change,
+                                                            SimulationActiveOrderInfo.change,
                                                             {
                                                                 'change_timestamp': timestamp,
                                                                 'limit_change': limit_change,
                                                                 'price_change': price_change,
                                                             })
+
+    def refill_order(self, timestamp, order_id, refill_amount):
+        """
+        Adds `refill_amount` to the order which is determined with the `order_id`.
+        :return: None
+        """
+        pass
+
+    def stats_order(self, timestamp, after_timestamp, order_id):
+        """
+        Returns the statistics of the order determined with the given order id.
+        :return: Dictionary with the following keys:
+        Timestamp in milliseconds since 1.1.1970
+        is_order_alive
+        accepted_speed
+        rejected_speed_share_above_target
+        rejected_speed_stale_shares
+        rejected_speed_duplicate_shares
+        rejected_speed_invalid_ntime
+        rejected_speed_other_reason
+        rejected_speed_unknown_worker
+        rejected_speed_response_timeout
+        speed_limit
+        rewarded_speed
+        paying_speed
+        rejected_speed
+        paid_amount
+        price
+        """
+        pass
 
 
 def generate_order_id(creation_timestamp):

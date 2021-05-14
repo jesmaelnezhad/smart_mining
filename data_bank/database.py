@@ -1,5 +1,6 @@
 import glob, os
 import sys
+from threading import Lock
 from time import sleep
 
 import psycopg2
@@ -89,7 +90,8 @@ class DatabaseUpdater(TickPerformer):
             success = self.load_csv_file(file_name)
             if success:
                 self.remember_csv_file_was_loaded(file_name)
-                logger('database/updater').info("CSV file {0} was loading into the database successfully.".format(file_name))
+                logger('database/updater').info(
+                    "CSV file {0} was loading into the database successfully.".format(file_name))
 
     def load_csv_file(self, full_file_path):
         file_name = os.path.basename(full_file_path)
@@ -101,6 +103,13 @@ class DatabaseUpdater(TickPerformer):
 
 
 class DatabaseHandler:
+    KEY_VALUES_TABLE_NAME = "key_values"
+    KEY_VALUES_CREATE_SQL_STATEMENT = """CREATE TABLE IF NOT EXISTS """ + \
+                                      KEY_VALUES_TABLE_NAME + """ (owner character(100), 
+        key character(500), 
+        value TEXT, 
+        CONSTRAINT owner_key_unique UNIQUE(owner, key));"""
+
     def __init__(self, user, password, database, host="127.0.0.1", port="5432"):
         """
         A singleton class that is the interface of databases
@@ -122,7 +131,8 @@ class DatabaseHandler:
             raise DatabaseException(
                 "Key value get failed because owner or key was None: owner: {0}, key: {1}".format(owner, key))
 
-        sql_query = "SELECT value FROM key_values WHERE owner = '{0}' AND key = '{1}';".format(owner, key)
+        sql_query = "SELECT value FROM {2} WHERE owner = '{0}' AND key = '{1}';".format(owner, key,
+                                                                                        self.KEY_VALUES_TABLE_NAME)
         results = self.execute_select(sql_query)
         if len(results) == 0:
             return None
@@ -137,11 +147,12 @@ class DatabaseHandler:
         :param value:
         :return: None
         """
-        sql_query = """INSERT INTO key_values (owner, key, value) VALUES ('{0}', '{1}', '{2}') 
+        sql_query = """INSERT INTO {3} (owner, key, value) VALUES ('{0}', '{1}', '{2}') 
          ON CONFLICT ON CONSTRAINT owner_key_unique DO 
          UPDATE SET value = '{2}';""".format(
             owner, key,
-            value)
+            value,
+            self.KEY_VALUES_TABLE_NAME)
         self.execute_write(sql_query)
 
     def execute_write(self, write_sql_query, return_generated_id=False):
@@ -163,8 +174,8 @@ class DatabaseHandler:
             conn.commit()
             return generated_id
         except (Exception, PGError) as e:
-            logger('database/handler').error("Write query failed {0}.".format(write_sql_query))
-            logger('database/handler').error("Exception {0}.".format(e))
+            logger('database/handler').debug("Write query failed {0}.".format(write_sql_query))
+            logger('database/handler').debug("Exception {0}.".format(e))
             raise DatabaseException('WRITE QUERY /// {0} /// FAILED.'.format(write_sql_query))
         finally:
             if conn is not None:
