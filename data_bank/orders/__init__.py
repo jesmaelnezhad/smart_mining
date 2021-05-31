@@ -1,7 +1,7 @@
 from configuration import EXECUTION_CONFIGS
 from data_bank.orders.orders_database import OrdersDatabaseHandler, OrdersDatabaseUpdater, RealtimeScopeIdentifier, \
     SimulationScopeIdentifier
-from data_bank.orders.virtual_orders_handler import VirtualOrdersUpdater, VirtualOrderThreadSafePersistentContainer
+from data_bank.orders.virtual_orders import VirtualOrdersUpdater, VirtualOrderThreadSafePersistentContainer
 
 ORDER_DB_UPDATER = None
 ORDER_DB_HANDLER = None
@@ -62,4 +62,4 @@ def get_virtual_orders_updater(scope_identifier):
 
 def get_virtual_orders_handler(scope_identifier):
     updater = get_virtual_orders_updater(scope_identifier)
-    return updater.virtual_orders
+    return updater.get_virtual_orders_handler()

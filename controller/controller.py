@@ -12,10 +12,21 @@ from data_bank import get_database_handler
 from utility.log import logger
 
 
-## TODO change controller to work with a table in the database and 'schedule' active strategies
+## TODO change controller to work with virtual order handler object to use virtual orders for SSRs
+"""
+At start:
+  Check database and load the state of active strategies from the database into memory
+  and create and bootstrap the StrategyStateMachine object for each one.
+
+At each reconcile:
+  1. Check all SSRs in the 'files/strategies' directory and create and bootstrap a
+  StrategyStateMachine object for each one that doesn't have one in the database. 
+"""
+
 
 class Controller(TickPerformer):
     TEMPORARY_ORDER_ID = "13131-43524dsfse-f23edfw4rfs-rfer-w4rt5ystet-w34tw3r3"
+
     def __init__(self, scope_identifier):
         """
         A singleton class that is the controller

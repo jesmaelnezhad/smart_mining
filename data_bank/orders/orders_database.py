@@ -80,7 +80,7 @@ class OrdersDatabaseUpdater(DatabaseUpdater):
         # 0. Unset the exist bit on all order records
         self.handler.unset_exist()
         # 1. Get the list of current active orders with their details
-        nice_hash_driver = self.scopre_identifier.get_nice_hash_driver()
+        nice_hash_driver = self.scope_identifier.get_nice_hash_driver()
         existing_orders = nice_hash_driver.get_orders(order_id=None)
         for o in existing_orders:
             self.handler.insert_or_update_order(creation_timestamp=o.get_creation_timestamp(),
@@ -189,7 +189,7 @@ class OrdersDatabaseHandler(DatabaseHandler, NiceHashDriver):
         self.ensure_order_stats_table()
         self.ensure_key_values_table()
 
-    def get_orders_driver(self):
+    def get_nice_hash_driver(self):
         return self.scope_identifier.get_nice_hash_driver()
 
     def create_order(self, creation_timestamp, order_id,
@@ -200,7 +200,7 @@ class OrdersDatabaseHandler(DatabaseHandler, NiceHashDriver):
                      pool_id=SLUSHPOOL_ID_NICEHASH,
                      exists=True):
         # insert into the driver and if successful, insert into the database
-        driver = self.get_orders_driver()
+        driver = self.get_nice_hash_driver()
         try:
             driver.create_order(creation_timestamp=creation_timestamp,
                                 order_id=order_id, price=price, speed_limit=speed_limit,
@@ -221,7 +221,7 @@ class OrdersDatabaseHandler(DatabaseHandler, NiceHashDriver):
 
     def close_order(self, order_id):
         # close using the driver and if successful, unset exist bit in the database
-        driver = self.get_orders_driver()
+        driver = self.get_nice_hash_driver()
         try:
             driver.close_order(order_id)
             # unsetting the exist bit into the database
@@ -248,7 +248,7 @@ class OrdersDatabaseHandler(DatabaseHandler, NiceHashDriver):
         :return: True if any matching order found
         """
         # Update using the driver and if successful, unset exist bit in the database
-        driver = self.get_orders_driver()
+        driver = self.get_nice_hash_driver()
         try:
             driver.update_order_price_and_limit(timestamp=timestamp, order_id=order_id, limit=limit,
                                                 price=price, display_market_factor=display_market_factor,
@@ -260,7 +260,7 @@ class OrdersDatabaseHandler(DatabaseHandler, NiceHashDriver):
 
     def refill_order(self, timestamp, order_id, refill_amount):
         # Refill using the driver and if successful, refill in the database
-        driver = self.get_orders_driver()
+        driver = self.get_nice_hash_driver()
         try:
             driver.refill_order(timestamp=timestamp, order_id=order_id, refill_amount=refill_amount)
             # Refill the database context.

@@ -7,7 +7,7 @@ from data_bank.driver.driver import NiceHashDriver
 from data_bank.model import ActiveOrderInfo, NiceHashActiveOrderMarket, NiceHashActiveOrderType, \
     NiceHashActiveOrderAlgorithm
 from utility.log import logger
-from utility.thread_safe_containers import ThreadSafeDictionary
+from utility.containers import ThreadSafeDictionary
 
 
 class SimulationActiveOrderInfo(ActiveOrderInfo):
@@ -136,13 +136,13 @@ class NiceHashSimulationDriver(NiceHashDriver):
         Applies the given change in limit or price in nicehash for the order with the given order id
         :return: True if any matching order found
         """
-        return self.order_container.call_method_from_object(order_id,
-                                                            SimulationActiveOrderInfo.change,
+        return self.order_container.call_method_from_object(SimulationActiveOrderInfo.change,
                                                             {
                                                                 'change_timestamp': timestamp,
                                                                 'limit_change': limit_change,
                                                                 'price_change': price_change,
-                                                            })
+                                                            },
+                                                            order_id)
 
     def refill_order(self, timestamp, order_id, refill_amount):
         """

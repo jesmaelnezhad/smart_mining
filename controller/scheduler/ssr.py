@@ -3,7 +3,8 @@ import yaml
 
 from configuration.constants import SSR_KEY_SSR, SSR_KEY_BASE_NAME, SSR_KEY_NAME, SSR_KEY_ABSTRACT, SSR_KEY_PACKAGE, \
     SSR_KEY_LIFECYCLE, SSR_KEY_TRIGGERS, SSR_KEY_ORDER_INFO, SSR_KEY_LIFECYCLE_START, SSR_KEY_LIFECYCLE_END, \
-    SSR_KEY_LIFECYCLE_EXECUTION, SSR_KEY_ORDER_PHYSICAL_ORDER_ID
+    SSR_KEY_LIFECYCLE_EXECUTION, SSR_KEY_ORDER_PHYSICAL_ORDER_ID, SSR_KEY_LIFECYCLE_EXECUTION_PARALLEL, \
+    SSR_KEY_LIFECYCLE_EXECUTION_REPEAT
 from utility.log import logger
 
 
@@ -150,6 +151,19 @@ class SSRLifecycle:
                     execution_obj = self.__dict__[key]
                 for exec_key, exec_value in value.items():
                     execution_obj[exec_key] = bool(exec_value)
+                self.__dict__[key] = execution_obj
+
+    def get_start_conditions(self):
+        return self.__dict__[SSR_KEY_LIFECYCLE_START]
+
+    def get_end_conditions(self):
+        return self.__dict__[SSR_KEY_LIFECYCLE_END]
+
+    def is_execution_in_parallel(self):
+        return self.__dict__[SSR_KEY_LIFECYCLE_EXECUTION][SSR_KEY_LIFECYCLE_EXECUTION_PARALLEL]
+
+    def should_execution_repeat(self):
+        return self.__dict__[SSR_KEY_LIFECYCLE_EXECUTION][SSR_KEY_LIFECYCLE_EXECUTION_REPEAT]
 
 
 class SSROrderInfo:
@@ -161,6 +175,8 @@ class SSROrderInfo:
         for key, value in data_dict.items():
             if key == SSR_KEY_ORDER_PHYSICAL_ORDER_ID:
                 self.__dict__[key] = str(value)
+
+
 
 
 class SSRLoader:

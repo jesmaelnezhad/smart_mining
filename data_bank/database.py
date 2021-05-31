@@ -139,6 +139,20 @@ class DatabaseHandler:
         else:
             return results[0][0]
 
+    def key_value_get_owner_all_keys(self, owner):
+        """
+        Returns the list of all keys for the given owner
+        :param owner:
+        :return: list of keys
+        """
+        if owner is None:
+            raise DatabaseException(
+                "Key value get owner's all failed because owner: owner: {0}".format(owner))
+
+        sql_query = "SELECT key FROM {1} WHERE owner = '{0}';".format(owner, self.KEY_VALUES_TABLE_NAME)
+        results = self.execute_select(sql_query)
+        return [result[0] for result in results]
+
     def key_value_put(self, owner, key, value):
         """
         Upserts the record for owner and key with the given value
@@ -153,6 +167,16 @@ class DatabaseHandler:
             owner, key,
             value,
             self.KEY_VALUES_TABLE_NAME)
+        self.execute_write(sql_query)
+
+    def key_value_delete(self, owner, key):
+        """
+        Deletes the record for owner and key
+        :param owner:
+        :param key:
+        :return: True if anything deleted, and False otherwise
+        """
+        sql_query = """DELETE FROM {2} WHERE owner='{0}' and key='{1}';""".format(owner, key, self.KEY_VALUES_TABLE_NAME)
         self.execute_write(sql_query)
 
     def execute_write(self, write_sql_query, return_generated_id=False):

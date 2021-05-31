@@ -10,7 +10,7 @@ data_bank/orders/__pycache__/
 files/code_samples/database.db
 files/dynamic_strategies/__pycache__/
 files/simulations
-data_bank/orders/vitual_order_request_applier/__pycache__/
+data_bank/orders/vitual_order_applier/__pycache__/
 venv/
 vagrant/.vagrant
 files/csv_data

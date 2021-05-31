@@ -9,7 +9,7 @@ from data_bank.orders import get_orders_database_updater, get_virtual_orders_upd
 from healthcheck import get_health_check_watcher
 from healthcheck.server import start_healthcheck_server
 from learner import get_learner
-from data_bank.orders.vitual_order_request_applier import get_request_applier
+from data_bank.orders.vitual_order_applier import get_request_applier
 from simulation_evaluator import get_simulation_evaluator
 from utility import log
 from analyzer import get_analyzer
