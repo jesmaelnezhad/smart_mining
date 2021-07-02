@@ -196,7 +196,14 @@ class VirtualOrdersUpdater(TickPerformer):
         while True:
             if should_stop():
                 break
-            sleep(self.tick_duration)
+            messages = dict()
+            try:
+                self.message_box_changed.acquire()
+                self.message_box_changed.wait(self.tick_duration)
+                messages = self.message_box.snapshot(should_clear=True)
+            finally:
+                self.message_box_changed.release()
+            # messages can be used from here.
             current_timestamp = get_clock().read_timestamp_of_now()
             # remove expired orders
             self.virtual_orders.remove_expired_orders(up_to_timestamp=current_timestamp)

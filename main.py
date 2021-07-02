@@ -5,11 +5,11 @@ from time import sleep
 from clock import get_clock
 from configuration import EXECUTION_CONFIGS, is_simulation, is_healthcheck
 from data_bank import get_database_updater, get_simulation_database_updater
-from data_bank.orders import get_orders_database_updater, get_virtual_orders_updater, get_simulation_scope_identifier
+from data_bank import get_orders_database_updater, get_virtual_orders_updater, get_simulation_scope_identifier
 from healthcheck import get_health_check_watcher
 from healthcheck.server import start_healthcheck_server
 from learner import get_learner
-from data_bank.orders.vitual_order_applier import get_request_applier
+from data_bank import get_request_applier
 from simulation_evaluator import get_simulation_evaluator
 from utility import log
 from analyzer import get_analyzer

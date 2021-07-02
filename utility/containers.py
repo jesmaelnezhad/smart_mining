@@ -58,12 +58,14 @@ class ThreadSafeDictionary:
         self.objects = dict()
         self.objects_mutex = Lock()
 
-    def snapshot(self):
+    def snapshot(self, should_clear=False):
         self.objects_mutex.acquire()
         try:
             result = dict()
             for k, v in self.objects.items():
                 result[k] = copy.deepcopy(self.objects[k])
+            if should_clear:
+                self.objects.clear()
             return result
         finally:
             self.objects_mutex.release()

@@ -47,7 +47,14 @@ class HealthCheckWatcher(TickPerformer):
         while True:
             if should_stop():
                 break
-            sleep(self.tick_duration)
+            messages = dict()
+            try:
+                self.message_box_changed.acquire()
+                self.message_box_changed.wait(self.tick_duration)
+                messages = self.message_box.snapshot(should_clear=True)
+            finally:
+                self.message_box_changed.release()
+            # messages can be used from here.
             silent_cycles_count = self.get_silent_cycles_count()
             logger("healthcheck/watcher").debug("Silent cycles count is {0}".format(silent_cycles_count))
             if silent_cycles_count > self.silent_cycles_threshold:

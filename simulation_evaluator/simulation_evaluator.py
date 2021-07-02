@@ -7,7 +7,7 @@ from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS, is_new_simulation_going_to_happen
-from data_bank import get_simulation_database_handler
+from data_bank.blocks import get_simulation_database_handler
 from utility.log import logger
 
 
@@ -41,7 +41,14 @@ class SimulationEvaluator(TickPerformer):
         while True:
             if should_stop():
                 break
-            sleep(self.tick_duration)
+            messages = dict()
+            try:
+                self.message_box_changed.acquire()
+                self.message_box_changed.wait(self.tick_duration)
+                messages = self.message_box.snapshot(should_clear=True)
+            finally:
+                self.message_box_changed.release()
+            # messages can be used from here.
             current_timestamp = get_clock().read_timestamp_of_now()
             logger('simulation/evaluator').debug("Updating evaluations at timestamp {0}.".format(current_timestamp))
             # fetch new order samples from the driver and record them in the database

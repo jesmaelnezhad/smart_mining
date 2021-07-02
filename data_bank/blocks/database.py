@@ -7,10 +7,8 @@ import psycopg2
 from psycopg2 import Error as PGError
 
 from clock import get_clock
-from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS
-from configuration.constants import SLUSHPOOL_NAME, DEFAULT_NUMBER_OF_PAST_BLOCKS_TO_FETCH
 from utility.log import logger
 
 
@@ -39,9 +37,15 @@ class DatabaseUpdater(TickPerformer):
         while True:
             if should_stop():
                 break
-            sleep(self.tick_duration)
+            messages = dict()
+            try:
+                self.message_box_changed.acquire()
+                self.message_box_changed.wait(self.tick_duration)
+                messages = self.message_box.snapshot(should_clear=True)
+            finally:
+                self.message_box_changed.release()
             current_timestamp = get_clock().read_timestamp_of_now()
-            self.update_data(current_timestamp)
+            self.update_data(current_timestamp, messages)
 
     def post_run(self):
         logger('database').info("Database ({0}) is terminating.".format(self.get_db_csv_name_suffix()))
@@ -52,7 +56,7 @@ class DatabaseUpdater(TickPerformer):
     def get_db_csv_name_suffix(self):
         raise DatabaseException("The base database class should not be used.")
 
-    def update_data(self, up_to_timestamp):
+    def update_data(self, up_to_timestamp, messages):
         """
         Updates the data up to the given timestamp. Uses current timestamp if None is passed.
         :return: None
@@ -182,7 +186,7 @@ class DatabaseHandler:
     def execute_write(self, write_sql_query, return_generated_id=False):
         """
         Executes the given update/insert/delete query
-        :param persistent_connection: when passed non None, no new connection will be made and it won't be closed
+        :param persistent_connection: when passed non None, no new connection will be made and it won'controller be closed
         :param return_generated_id: The function returns the generated id if True is passed which means it's an insert
         :param write_sql_query: the sql query to execute
         :return: None or the generated ID

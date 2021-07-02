@@ -1,15 +1,11 @@
 import random
 
-from controller import base_core, controller, strategy
-from analyzer import analyzer
+from controller import base_core, controller
 from clock import clock
-from configuration import configs, constants
-from data_bank import mine_database, simulation_database
-from data_bank.orders import virtual_orders
-from learner import learner
+from data_bank import virtual_orders
 
 
-class Machine(base_core.BaseMachine):
+class Machine(base_core.BaseCore):
     def __init__(self, persistent_interface):
         super(Machine, self).__init__()
         self.persistent_interface = persistent_interface

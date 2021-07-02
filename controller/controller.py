@@ -8,7 +8,7 @@ from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS, is_simulation
 from controller.scheduler.ssr import SSRLoader
-from data_bank import get_database_handler
+from data_bank.blocks import get_database_handler
 from utility.log import logger
 
 
@@ -20,7 +20,7 @@ At start:
 
 At each reconcile:
   1. Check all SSRs in the 'files/strategies' directory and create and bootstrap a
-  StrategyStateMachine object for each one that doesn't have one in the database. 
+  StrategyStateMachine object for each one that doesn'controller have one in the database. 
 """
 
 
@@ -39,8 +39,15 @@ class Controller(TickPerformer):
         self.init_active_order_info(current_timestamp)
         self.latest_block_id = None
         self.latest_block_moment = None
+
+
         self.block_has_just_solved = False
+
+
         self.update_latest_block_id(current_timestamp)
+
+
+
         self.cdf50_is_step_on = False
 
     def get_nice_hash_driver(self):
@@ -119,7 +126,14 @@ class Controller(TickPerformer):
         while True:
             if should_stop():
                 break
-            sleep(self.tick_duration)
+            messages = dict()
+            try:
+                self.message_box_changed.acquire()
+                self.message_box_changed.wait(self.tick_duration)
+                messages = self.message_box.snapshot(should_clear=True)
+            finally:
+                self.message_box_changed.release()
+            # messages can be used from here.
             # Unless it is a simulation, declare liveness to the healthcheck API
             if not is_simulation():
                 # poke healthcheck API

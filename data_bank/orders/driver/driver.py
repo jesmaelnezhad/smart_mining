@@ -1,32 +1,20 @@
+from clock.clock import calculate_tick_duration_from_sleep_duration
+from configuration import EXECUTION_CONFIGS
 from configuration.constants import SLUSHPOOL_ID_NICEHASH
-from data_bank.driver.driver import NiceHashDriver
-from data_bank.model import ActiveOrderInfo, NiceHashActiveOrderMarket, NiceHashActiveOrderType, \
-    NiceHashActiveOrderAlgorithm
+from data_bank.orders.order import NiceHashActiveOrderAlgorithm, NiceHashActiveOrderMarket, NiceHashActiveOrderType
 
 
-class RealtimeActiveOrderInfo(ActiveOrderInfo):
-    def __init__(self, order_details_json):
-        """
-        A json such as this: https://www.nicehash.com/docs/rest/post-main-api-v2-hashpower-order
-        :param order_details_json: the full json information of the order as Nicehash API returns
-        """
-        # TODO call super constructor using the data extracted from the given json
-        self.order_details_json = order_details_json
-
-    def get_full_json_details(self):
-        return self.order_details_json
+class DriverOperationException(Exception):
+    pass
 
 
-class NiceHashRealtimeDriver(NiceHashDriver):
-    """
-    Class that implements the driver of the real nicehash and is used to make changes to actual nicehash orders
-    """
-
+class NiceHashDriver:
     def __init__(self):
         """
         A singleton class that is the driver of nicehash
         """
         super().__init__()
+        self.tick_duration = calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.nice_hash_sleep_duration)
 
     def create_order(self, creation_timestamp, order_id,
                      price, speed_limit, amount,
@@ -38,18 +26,17 @@ class NiceHashRealtimeDriver(NiceHashDriver):
         """
         Creates a new order with the given initial price and limit and returns the order id
         :param price:
-        :param exists:
         :param amount:
         :param speed_limit:
+        :param exists:
         :param creation_timestamp:
-        :param order_id: will be used if given (in the simulation mode)
         :param pool_id:
         :param market:
         :param order_type:
         :param algorithm:
+        :param order_id: will be used if given (in the simulation mode), order_id=None
         :return: ActiveOrderInfo object
         """
-        # TODO create the order in the real nicehash
         pass
 
     def close_order(self, order_id):
@@ -58,25 +45,31 @@ class NiceHashRealtimeDriver(NiceHashDriver):
         :param order_id:
         :return: True if any matching order was found and False otherwise
         """
-        # TODO close order in real nicehash
         pass
+
+    def close_all_orders(self):
+        """
+        Closes all orders
+        :return:
+        """
+        orders = self.get_orders(order_id=None)
+        for o in orders:
+            self.close_order(order_id=o.get_order_id())
 
     def get_orders(self, order_id=None):
         """
         Returns all orders or the one with the given order id (or None if not exists)
         :param order_id:
-        :return: a dictionary of orders or a single order or None
+        :return: and array of orders or a single order
         """
-        # TODO get a snapshot of the real orders
-        return {}
+        pass
 
-    def update_order_price_and_limit(self, timestamp, order_id, limit, price, display_market_factor=None,
-                                     market_factor=None):
+    def update_order_price_and_limit(self, timestamp, order_id, limit, price, display_market_factor=None, market_factor=None):
         """
+        # FIXME: set defailts for market factors
         Applies the given change in limit or price in nicehash for the order with the given order id
         :return: True if any matching order found
         """
-        # TODO change the real order in nicehash
         pass
 
     def refill_order(self, timestamp, order_id, refill_amount):
@@ -84,7 +77,6 @@ class NiceHashRealtimeDriver(NiceHashDriver):
         Adds `refill_amount` to the order which is determined with the `order_id`.
         :return: None
         """
-        # TODO refill the order in nicehash
         pass
 
     def stats_order(self, timestamp, after_timestamp, order_id):
@@ -108,5 +100,4 @@ class NiceHashRealtimeDriver(NiceHashDriver):
         paid_amount
         price
         """
-        # TODO get stats from nicehash
         pass

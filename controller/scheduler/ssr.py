@@ -177,8 +177,6 @@ class SSROrderInfo:
                 self.__dict__[key] = str(value)
 
 
-
-
 class SSRLoader:
     def __init__(self):
         self.ssr_objects = dict()

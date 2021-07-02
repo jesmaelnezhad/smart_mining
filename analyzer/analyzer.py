@@ -6,9 +6,9 @@ from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS
+from data_bank.blocks import MineDatabaseHandler
 from utility.datetime_helpers import size_in_seconds
 from utility.log import logger
-from data_bank import mine_database as mine_db
 from configuration import constants
 
 
@@ -125,7 +125,7 @@ class AveragePoolBlockCount(AverageWindowMetric):
         boundaries = self.get_short_window_boundaries()
         # get data from database to fill data
         values = []
-        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        mine_db_handler = MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
         for i in range(0, len(boundaries)):
             end_timestamp = boundaries[i]
             begin_timestamp = end_timestamp - self.short_window_length
@@ -146,7 +146,7 @@ class AveragePoolHashPower(AverageWindowMetric):
         boundaries = self.get_short_window_boundaries()
         # get data from database to fill data
         values = []
-        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        mine_db_handler = MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
         for i in range(0, len(boundaries)):
             end_timestamp = boundaries[i]
             begin_timestamp = end_timestamp - self.short_window_length
@@ -172,7 +172,7 @@ class AveragePoolActiveWorkers(AverageWindowMetric):
         boundaries = self.get_short_window_boundaries()
         # get data from database to fill data
         values = []
-        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        mine_db_handler = MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
         for i in range(0, len(boundaries)):
             end_timestamp = boundaries[i]
             begin_timestamp = end_timestamp - self.short_window_length
@@ -198,7 +198,7 @@ class AveragePoolActiveUsers(AverageWindowMetric):
         boundaries = self.get_short_window_boundaries()
         # get data from database to fill data
         values = []
-        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        mine_db_handler = MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
         for i in range(0, len(boundaries)):
             end_timestamp = boundaries[i]
             begin_timestamp = end_timestamp - self.short_window_length
@@ -224,7 +224,7 @@ class AveragePoolScoringHashPower(AverageWindowMetric):
         boundaries = self.get_short_window_boundaries()
         # get data from database to fill data
         values = []
-        mine_db_handler = mine_db.MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
+        mine_db_handler = MineDatabaseHandler(EXECUTION_CONFIGS.db_user, EXECUTION_CONFIGS.db_password)
         for i in range(0, len(boundaries)):
             end_timestamp = boundaries[i]
             begin_timestamp = end_timestamp - self.short_window_length
@@ -319,9 +319,15 @@ class Analyzer(TickPerformer):
         while True:
             if should_stop():
                 break
-            sleep(self.tick_duration)
+            messages = dict()
+            try:
+                self.message_box_changed.acquire()
+                self.message_box_changed.wait(self.tick_duration)
+                messages = self.message_box.snapshot(should_clear=True)
+            finally:
+                self.message_box_changed.release()
             current_timestamp = get_clock().read_timestamp_of_now()
-            self.update_stats(current_timestamp)
+            self.update_stats(current_timestamp, messages)
             logger('analyzer').debug("Updating analytics at timestamp {0}.".format(current_timestamp))
 
     def post_run(self):
@@ -330,7 +336,7 @@ class Analyzer(TickPerformer):
     def is_a_daemon(self):
         return False
 
-    def update_stats(self, current_timestamp):
+    def update_stats(self, current_timestamp, messages):
         metric_container = self.statistics.average_window_metric_containers
         for stat in metric_container:
             stat.set_latest_timestamp(current_timestamp)

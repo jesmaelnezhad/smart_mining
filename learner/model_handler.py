@@ -62,7 +62,7 @@ class ModelHandler:
         """
         :param up_to_timestamp: The latest timestamp that would be checked in the database to see if there is any
         data not considered in the model yet.
-        :return: True if there are any new data points in the database (i.e., up to the given timestamp) that is not
+        :return: True if there are any new data points in the database (end.or_event., up to the given timestamp) that is not
         used in training the model and is new to it; and False otherwise.
         """
         # TODO

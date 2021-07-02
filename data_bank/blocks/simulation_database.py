@@ -1,6 +1,6 @@
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from configuration import EXECUTION_CONFIGS, is_new_simulation_going_to_happen
-from data_bank.database import DatabaseHandler, DatabaseUpdater
+from data_bank.blocks.database import DatabaseUpdater, DatabaseHandler
 from utility.log import logger
 
 
@@ -14,7 +14,7 @@ class SimulationDatabaseUpdater(DatabaseUpdater):
     def get_tick_duration(self):
         return calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.simulation_db_updater_sleep_duration)
 
-    def update_data(self, up_to_timestamp):
+    def update_data(self, up_to_timestamp, messages):
         """
         Updates the data up to the given timestamp. Uses current timestamp if None is passed.
         :return: None

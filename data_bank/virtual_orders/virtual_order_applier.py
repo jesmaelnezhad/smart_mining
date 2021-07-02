@@ -1,11 +1,11 @@
 from time import sleep
-
 from clock import get_clock
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from clock.tick_performer import TickPerformer
 from configuration import EXECUTION_CONFIGS
-from data_bank.orders import get_virtual_orders_handler, get_orders_database_handler
-from data_bank.orders.virtual_orders import VirtualOrder, VirtualOrderStatus
+from data_bank.orders import get_orders_database_handler
+from data_bank.virtual_orders import get_virtual_orders_handler
+from data_bank.virtual_orders.virtual_orders import VirtualOrderStatus
 from utility.log import logger
 
 
@@ -28,7 +28,14 @@ class VirtualOrderApplier(TickPerformer):
         while True:
             if should_stop():
                 break
-            sleep(self.tick_duration)
+            messages = dict()
+            try:
+                self.message_box_changed.acquire()
+                self.message_box_changed.wait(self.tick_duration)
+                messages = self.message_box.snapshot(should_clear=True)
+            finally:
+                self.message_box_changed.release()
+            # messages can be used from here.
             current_timestamp = get_clock().read_timestamp_of_now()
             report = self.virtual_order_handler.get_aggregated_virtual_order_limits(up_to_timestamp=current_timestamp)
             for order_id, request_summary in report.items():

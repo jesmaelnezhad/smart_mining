@@ -1,13 +1,9 @@
 from configuration import EXECUTION_CONFIGS
-from data_bank.orders.orders_database import OrdersDatabaseHandler, OrdersDatabaseUpdater, RealtimeScopeIdentifier, \
-    SimulationScopeIdentifier
-from data_bank.orders.virtual_orders import VirtualOrdersUpdater, VirtualOrderThreadSafePersistentContainer
+from data_bank.orders.orders_database import OrdersDatabaseHandler, OrdersDatabaseUpdater
+from data_bank.scope import RealtimeScopeIdentifier, SimulationScopeIdentifier
 
 ORDER_DB_UPDATER = None
 ORDER_DB_HANDLER = None
-
-VIRTUAL_ORDERS_UPDATER = None
-VIRTUAL_ORDERS_HANDLER = None
 
 REALTIME_SCOPE_IDENTIFIER = None
 SIMULATION_SCOPE_IDENTIFIER = None
@@ -48,18 +44,3 @@ def get_orders_database_updater(scope_identifier):
     if ORDER_DB_UPDATER is None:
         ORDER_DB_UPDATER = OrdersDatabaseUpdater(get_orders_database_handler(scope_identifier), scope_identifier)
     return ORDER_DB_UPDATER
-
-
-def get_virtual_orders_updater(scope_identifier):
-    global VIRTUAL_ORDERS_UPDATER
-    """
-    :return: the virtual order updater object
-    """
-    if VIRTUAL_ORDERS_UPDATER is None:
-        VIRTUAL_ORDERS_UPDATER = VirtualOrdersUpdater(get_orders_database_handler(scope_identifier))
-    return VIRTUAL_ORDERS_UPDATER
-
-
-def get_virtual_orders_handler(scope_identifier):
-    updater = get_virtual_orders_updater(scope_identifier)
-    return updater.get_virtual_orders_handler()

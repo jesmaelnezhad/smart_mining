@@ -1,4 +1,6 @@
-from threading import Thread, Lock
+from threading import Thread, Lock, Condition
+
+from utility.containers import ThreadSafeDictionary
 
 
 class TickPerformer:
@@ -8,6 +10,16 @@ class TickPerformer:
         self.stop_flag_mutex = Lock()
         self.execution_ended = False
         self.execution_ended_mutex = Lock()
+        self.message_box = ThreadSafeDictionary()
+        self.message_box_changed = Condition()
+
+    def add_to_message_box(self, key, value):
+        self.message_box.set(key, value)
+        try:
+            self.message_box_changed.acquire()
+            self.message_box_changed.notify_all()
+        finally:
+            self.message_box_changed.release()
 
     def should_end_execution(self):
         self.execution_ended_mutex.acquire()

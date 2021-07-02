@@ -3,10 +3,9 @@ import math
 from clock import get_clock
 from configuration import EXECUTION_CONFIGS
 from configuration.constants import NICE_HASH_LIMIT_CHANGE_PER_SECOND, SLUSHPOOL_ID_NICEHASH
-from data_bank.driver.driver import NiceHashDriver
-from data_bank.model import ActiveOrderInfo, NiceHashActiveOrderMarket, NiceHashActiveOrderType, \
+from data_bank.orders.driver.driver import NiceHashDriver
+from data_bank.orders.order import ActiveOrderInfo, NiceHashActiveOrderMarket, NiceHashActiveOrderType, \
     NiceHashActiveOrderAlgorithm
-from utility.log import logger
 from utility.containers import ThreadSafeDictionary
 
 
@@ -139,8 +138,8 @@ class NiceHashSimulationDriver(NiceHashDriver):
         return self.order_container.call_method_from_object(SimulationActiveOrderInfo.change,
                                                             {
                                                                 'change_timestamp': timestamp,
-                                                                'limit_change': limit_change,
-                                                                'price_change': price_change,
+                                                                'limit_change': limit,
+                                                                'price_change': price,
                                                             },
                                                             order_id)
 

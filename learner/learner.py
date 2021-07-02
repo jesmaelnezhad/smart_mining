@@ -44,7 +44,14 @@ class Learner(TickPerformer):
         while True:
             if should_stop():
                 break
-            sleep(self.tick_duration)
+            messages = dict()
+            try:
+                self.message_box_changed.acquire()
+                self.message_box_changed.wait(self.tick_duration)
+                messages = self.message_box.snapshot(should_clear=True)
+            finally:
+                self.message_box_changed.release()
+            # messages can be used from here.
             current_timestamp = get_clock().read_timestamp_of_now()
             logger('learner').debug("Updating learner at timestamp {0}.".format(current_timestamp))
             # update the ML model if any unseen data exists

@@ -9,7 +9,7 @@ from clock.clock import calculate_tick_duration_from_sleep_duration
 from configuration import EXECUTION_CONFIGS
 from configuration.constants import SLUSHPOOL_ID, SLUSHPOOL_DATA_FETCH_START_UTC_TIMESTAMP, SLUSHPOOL_API_BASE_URL, \
     DATA_FETCH_API_INTER_DELAY
-from data_bank.database import DatabaseHandler, DatabaseUpdater, DatabaseException
+from data_bank.blocks.database import DatabaseUpdater, DatabaseException, DatabaseHandler
 from utility.datetime_helpers import datetime_string_to_timestamp
 from utility.log import logger
 import requests
@@ -25,7 +25,7 @@ class MineDatabaseUpdater(DatabaseUpdater):
     def get_tick_duration(self):
         return calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.mine_db_updater_sleep_duration)
 
-    def update_data(self, up_to_timestamp):
+    def update_data(self, up_to_timestamp, messages):
         """
         Updates the data up to the given timestamp. Uses current timestamp if None is passed.
         :return: None

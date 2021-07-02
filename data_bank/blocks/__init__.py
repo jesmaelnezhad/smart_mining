@@ -1,6 +1,6 @@
 from configuration import EXECUTION_CONFIGS
-from data_bank.mine_database import MineDatabaseHandler, MineDatabaseUpdater
-from data_bank.simulation_database import SimulationDatabaseHandler, SimulationDatabaseUpdater
+from data_bank.blocks.mine_database import MineDatabaseHandler, MineDatabaseUpdater
+from data_bank.blocks.simulation_database import SimulationDatabaseHandler, SimulationDatabaseUpdater
 
 DB_UPDATER = None
 SIMULATION_DB_UPDATER = None

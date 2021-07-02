@@ -1,50 +1,12 @@
 from clock.clock import calculate_tick_duration_from_sleep_duration
 from configuration import EXECUTION_CONFIGS
 from configuration.constants import SLUSHPOOL_ID_NICEHASH
-from data_bank.database import DatabaseHandler, DatabaseUpdater, DatabaseException
-from data_bank.driver import NiceHashRealtimeDriver, NiceHashSimulationDriver
-from data_bank.driver.driver import NiceHashDriver, DriverOperationException
-from data_bank.model import NiceHashActiveOrderMarket, NiceHashActiveOrderType, NiceHashActiveOrderAlgorithm
+from data_bank.blocks.database import DatabaseUpdater, DatabaseHandler, DatabaseException
+from data_bank.orders.driver.driver import NiceHashDriver, DriverOperationException
+from data_bank.orders.driver.realtime_driver import NiceHashRealtimeDriver
+from data_bank.orders.driver.simulation_driver import NiceHashSimulationDriver
+from data_bank.orders.order import NiceHashActiveOrderMarket, NiceHashActiveOrderType, NiceHashActiveOrderAlgorithm
 from utility.log import logger
-
-
-class RuntimeScopeIdentifier:
-    DRIVER = None
-
-    def get_runtime_scope_database_prefix(self):
-        pass
-
-    def get_runtime_scope_should_drop_at_first(self):
-        pass
-
-    def get_nice_hash_driver(self):
-        pass
-
-
-class RealtimeScopeIdentifier(RuntimeScopeIdentifier):
-    def get_runtime_scope_database_prefix(self):
-        return ""
-
-    def get_runtime_scope_should_drop_at_first(self):
-        return False
-
-    def get_nice_hash_driver(self):
-        if self.DRIVER is None:
-            self.DRIVER = NiceHashRealtimeDriver()
-        return self.DRIVER
-
-
-class SimulationScopeIdentifier(RuntimeScopeIdentifier):
-    def get_runtime_scope_database_prefix(self):
-        return "simulation_"
-
-    def get_runtime_scope_should_drop_at_first(self):
-        return True
-
-    def get_nice_hash_driver(self):
-        if self.DRIVER is None:
-            self.DRIVER = NiceHashSimulationDriver()
-        return self.DRIVER
 
 
 class OrdersDatabaseUpdater(DatabaseUpdater):
@@ -58,7 +20,7 @@ class OrdersDatabaseUpdater(DatabaseUpdater):
     def get_tick_duration(self):
         return calculate_tick_duration_from_sleep_duration(EXECUTION_CONFIGS.order_db_updater_sleep_duration)
 
-    def update_data(self, up_to_timestamp):
+    def update_data(self, up_to_timestamp, messages):
         """
         Updates the data up to the given timestamp. Uses current timestamp if None is passed.
         :return: None
