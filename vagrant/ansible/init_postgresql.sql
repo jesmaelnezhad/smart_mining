@@ -3,10 +3,12 @@ CREATE USER smart_miner WITH ENCRYPTED PASSWORD 'smartminerpa$$w0rd1368';
 CREATE DATABASE smart_miner;
 CREATE DATABASE smart_miner_simulation_data;
 CREATE DATABASE smart_miner_orders_data;
+CREATE DATABASE simulation_smart_miner_orders_data;
 /* CREATE TABLE a_simulation(order_id character(200) NOT NULL, moment timestamptz NOT NULL, power_limit DOUBLE PRECISION DEFAULT 0.0, price DOUBLE PRECISION DEFAULT 0.0, CONSTRAINT order_status UNIQUE(order_id, moment)); */
 GRANT ALL PRIVILEGES ON DATABASE smart_miner TO smart_miner;
 GRANT ALL PRIVILEGES ON DATABASE smart_miner_simulation_data TO smart_miner;
 GRANT ALL PRIVILEGES ON DATABASE smart_miner_orders_data TO smart_miner;
+GRANT ALL PRIVILEGES ON DATABASE simulation_smart_miner_orders_data TO smart_miner;
 \c smart_miner
 CREATE TABLE pools (id SERIAL PRIMARY KEY, name character(40) NOT NULL UNIQUE);
 INSERT INTO pools (name) VALUES ('slushpool');
